@@ -9,9 +9,9 @@ assert() {
   actual="$?"
 
   if [ "$actual" = "$expected" ]; then
-    echo "$input => $actual"
+    echo "'$input' => '$actual'"
   else
-    echo "$input => $expected expected, but got $actual"
+    echo "'$input' => '$expected' expected, but got '$actual'"
     exit 1
   fi
 
@@ -23,5 +23,6 @@ cargo build
 
 assert 0 0
 assert 42 42
+assert 41 "   12 + 34 -  5 "
 
 echo OK

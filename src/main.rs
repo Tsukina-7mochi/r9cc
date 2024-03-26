@@ -6,5 +6,5 @@ fn main() {
     let mut buffer = String::new();
     io::stdin().read_line(&mut buffer).unwrap();
 
-    println!("{}", r9cc::compile(buffer));
+    println!("{}", r9cc::compile(&buffer));
 }
