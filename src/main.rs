@@ -6,5 +6,9 @@ fn main() {
     let mut buffer = String::new();
     io::stdin().read_line(&mut buffer).unwrap();
 
-    println!("{}", r9cc::compile(&buffer));
+    let result = r9cc::compile(&buffer);
+    match result {
+        Ok(result) => println!("{}", result),
+        Err(err) => print!("{}", err),
+    }
 }

@@ -41,7 +41,7 @@ impl Token {
         }
     }
 
-    pub fn as_integer(self) -> Option<i32> {
+    pub fn integer_value(&self) -> Option<i32> {
         match self.kind {
             TokenKind::Integer(value) => Some(value),
             _ => None,
