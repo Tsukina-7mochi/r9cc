@@ -36,7 +36,7 @@ pub fn compile(text: &str) -> Result<String> {
 
         match token.kind {
             TokenKind::EOF => break,
-            TokenKind::OperatorPlus => {
+            TokenKind::OperatorAdd => {
                 let next_number = token_iter
                     .next()
                     .ok_or(CompileError::unexpected_eof(
@@ -51,7 +51,7 @@ pub fn compile(text: &str) -> Result<String> {
                     })?;
                 result.push_str(&format!("   add rax, {}\n", next_number))
             }
-            TokenKind::OperatorMinus => {
+            TokenKind::OperatorSub => {
                 let next_number = token_iter
                     .next()
                     .ok_or(CompileError::unexpected_eof(

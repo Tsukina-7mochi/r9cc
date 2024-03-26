@@ -1,4 +1,4 @@
-use super::token::Token;
+use super::token::{Token, TokenKind};
 
 mod re {
     use once_cell::sync::Lazy;
@@ -33,9 +33,9 @@ impl<'a> Tokenizer<'a> {
 
     pub fn consume_char(&mut self) -> Option<Token> {
         let token = match self.text.get(self.index) {
-            None => Some(Token::eof(self.index)),
-            Some(b'+') => Some(Token::operator_plus(self.index)),
-            Some(b'-') => Some(Token::operator_minus(self.index)),
+            None => Some(Token::new(TokenKind::EOF, self.index)),
+            Some(b'+') => Some(Token::new(TokenKind::OperatorAdd, self.index)),
+            Some(b'-') => Some(Token::new(TokenKind::OperatorSub, self.index)),
             _ => None,
         };
 
@@ -59,7 +59,7 @@ impl<'a> Tokenizer<'a> {
             .unwrap()
             .parse()
             .unwrap();
-        let token = Token::integer(value, self.index);
+        let token = Token::new(TokenKind::Integer(value), self.index);
 
         self.index += m.len();
 

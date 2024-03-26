@@ -1,8 +1,8 @@
 #[derive(Debug, PartialEq, Eq)]
 pub enum TokenKind {
     Integer(i32),
-    OperatorPlus,
-    OperatorMinus,
+    OperatorAdd,
+    OperatorSub,
     EOF,
 }
 
@@ -13,32 +13,8 @@ pub struct Token {
 }
 
 impl Token {
-    pub fn integer(value: i32, index_start: usize) -> Self {
-        Self {
-            kind: TokenKind::Integer(value),
-            index_start,
-        }
-    }
-
-    pub fn operator_plus(index_start: usize) -> Self {
-        Self {
-            kind: TokenKind::OperatorPlus,
-            index_start,
-        }
-    }
-
-    pub fn operator_minus(index_start: usize) -> Self {
-        Self {
-            kind: TokenKind::OperatorMinus,
-            index_start,
-        }
-    }
-
-    pub fn eof(index_start: usize) -> Self {
-        Self {
-            kind: TokenKind::EOF,
-            index_start,
-        }
+    pub fn new(kind: TokenKind, index_start: usize) -> Self {
+        Self { kind, index_start }
     }
 
     pub fn integer_value(&self) -> Option<i32> {
