@@ -3,6 +3,8 @@ pub enum TokenKind {
     Integer(i32),
     OperatorAdd,
     OperatorSub,
+    OperatorMul,
+    OperatorDiv,
     EOF,
 }
 
