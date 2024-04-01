@@ -5,6 +5,21 @@ use crate::compiler::token::TokenKind;
 
 pub type Result<T = ()> = std::result::Result<T, CompileError>;
 
+impl TokenKind {
+    fn token_kind_display(&self) -> &str {
+        match self {
+            Self::Integer(_) => "integer",
+            Self::SymbolPlus => "'+'",
+            Self::SymbolMinus => "'-'",
+            Self::SymbolStar => "'*'",
+            Self::SymbolSlash => "'/'",
+            TokenKind::SymbolRoundBracketLeft => "'('",
+            Self::SymbolRoundBracketRight => "')'",
+            Self::EOF => "EOF",
+        }
+    }
+}
+
 #[derive(Debug)]
 pub enum CompileErrorKind {
     UnexpectedToken { expected: Vec<TokenKind> },
@@ -43,7 +58,15 @@ impl fmt::Display for CompileError {
         match self.kind {
             CompileErrorKind::UnexpectedToken { ref expected } => {
                 writeln!(f, "unexpected token at {}", self.index_start)?;
-                writeln!(f, "{:?} expected", expected)?;
+                writeln!(
+                    f,
+                    "expected the one of [{}]",
+                    expected
+                        .iter()
+                        .map(|kind| kind.token_kind_display())
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                )?;
             }
             CompileErrorKind::UnexpectedEOF => {
                 writeln!(f, "unexpected EOF at {}", self.index_start)?;
