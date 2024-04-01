@@ -21,8 +21,10 @@ assert() {
 
 cargo build
 
-assert 0 0
-assert 42 42
-assert 41 "   12 + 34 -  5 "
+assert 10 " 10 "
+assert 41 " 12 + 34 -  5 "
+assert 6 "3 * 4 / 2"
+assert 7 " 1 + 2 * 3 "
+assert 9 "(1 + 2) * 3"
 
 echo OK

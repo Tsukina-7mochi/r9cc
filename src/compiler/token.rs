@@ -5,6 +5,8 @@ pub enum TokenKind {
     OperatorSub,
     OperatorMul,
     OperatorDiv,
+    RoundBracketLeft,
+    RoundBracketRight,
     EOF,
 }
 

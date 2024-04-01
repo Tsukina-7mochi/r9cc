@@ -1,11 +1,13 @@
 use std::error;
 use std::fmt;
 
+use super::token::TokenKind;
+
 pub type Result<T = ()> = std::result::Result<T, CompileError>;
 
 #[derive(Debug)]
 pub enum CompileErrorKind {
-    UnexpectedToken,
+    UnexpectedToken { expected: Vec<TokenKind> },
     UnexpectedEOF,
 }
 
@@ -17,18 +19,18 @@ pub struct CompileError {
 }
 
 impl CompileError {
-    pub fn unexpected_token(text: String, index_start: usize) -> Self {
+    pub fn unexpected_token(text: &str, index_start: usize, expected: Vec<TokenKind>) -> Self {
         Self {
-            kind: CompileErrorKind::UnexpectedToken,
-            text,
+            kind: CompileErrorKind::UnexpectedToken { expected },
+            text: text.to_owned(),
             index_start,
         }
     }
 
-    pub fn unexpected_eof(text: String, index_start: usize) -> Self {
+    pub fn unexpected_eof(text: &str, index_start: usize) -> Self {
         Self {
             kind: CompileErrorKind::UnexpectedEOF,
-            text,
+            text: text.to_owned(),
             index_start,
         }
     }
@@ -39,8 +41,9 @@ impl fmt::Display for CompileError {
         write!(f, "Compile error: ")?;
 
         match self.kind {
-            CompileErrorKind::UnexpectedToken => {
+            CompileErrorKind::UnexpectedToken { ref expected } => {
                 writeln!(f, "unexpected token at {}", self.index_start)?;
+                writeln!(f, "{:?} expected", expected)?;
             }
             CompileErrorKind::UnexpectedEOF => {
                 writeln!(f, "unexpected EOF at {}", self.index_start)?;

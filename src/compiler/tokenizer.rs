@@ -38,6 +38,8 @@ impl<'a> Tokenizer<'a> {
             Some(b'-') => Some(Token::new(TokenKind::OperatorSub, self.index)),
             Some(b'*') => Some(Token::new(TokenKind::OperatorMul, self.index)),
             Some(b'/') => Some(Token::new(TokenKind::OperatorDiv, self.index)),
+            Some(b'(') => Some(Token::new(TokenKind::RoundBracketLeft, self.index)),
+            Some(b')') => Some(Token::new(TokenKind::RoundBracketRight, self.index)),
             _ => None,
         };
 

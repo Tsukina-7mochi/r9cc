@@ -1,76 +1,80 @@
-use super::error::{CompileError, Result};
-use super::token::TokenKind;
-use super::tokenizer::Tokenizer;
+use super::error::Result;
+use super::parser::{Node, Parser};
+
+trait IntoX86_64String {
+    fn into_x86_64_string(&self) -> String;
+}
+
+impl IntoX86_64String for Node {
+    fn into_x86_64_string(&self) -> String {
+        match self {
+            Node::Integer { value } => format!("push {}", value),
+            Node::OperatorAdd { lhs, rhs } => {
+                format!(
+                    "{}\n\
+                     {}\n\
+                     pop rdi\n\
+                     pop rax\n\
+                     add rax, rdi\n\
+                     push rax",
+                    lhs.into_x86_64_string(),
+                    rhs.into_x86_64_string(),
+                )
+            }
+            Node::OperatorSub { lhs, rhs } => {
+                format!(
+                    "{}\n\
+                     {}\n\
+                     pop rdi\n\
+                     pop rax\n\
+                     sub rax, rdi\n\
+                     push rax",
+                    lhs.into_x86_64_string(),
+                    rhs.into_x86_64_string(),
+                )
+            }
+            Node::OperatorMul { lhs, rhs } => {
+                format!(
+                    "{}\n\
+                     {}\n\
+                     pop rdi\n\
+                     pop rax\n\
+                     imul rax, rdi\n\
+                     push rax",
+                    lhs.into_x86_64_string(),
+                    rhs.into_x86_64_string(),
+                )
+            }
+            Node::OperatorDiv { lhs, rhs } => {
+                format!(
+                    "{}\n\
+                     {}\n\
+                     pop rdi\n\
+                     pop rax\n\
+                     cqo\n\
+                     idiv rax, rdi\n\
+                     push rax",
+                    lhs.into_x86_64_string(),
+                    rhs.into_x86_64_string(),
+                )
+            }
+        }
+    }
+}
 
 pub fn compile(text: &str) -> Result<String> {
     let text = text.trim();
-    let mut token_iter = Tokenizer::new(text).into_iter();
+    let node = Parser::new(text).parse()?;
 
-    let mut result = String::new();
-
-    result.push_str(".intel_syntax noprefix\n");
-    result.push_str(".global main\n");
-    result.push_str("main:\n");
-
-    let next_number = token_iter
-        .next()
-        .ok_or(CompileError::unexpected_eof(text.to_owned(), 0))
-        .and_then(|token| {
-            token.integer_value().ok_or(CompileError::unexpected_token(
-                text.to_owned(),
-                token.index_start,
-            ))
-        })?;
-    result.push_str(&format!("   mov rax, {}\n", next_number));
-
-    loop {
-        let token = token_iter.next();
-        let token = match token {
-            Some(token) => token,
-            _ => {
-                eprintln!("{}", text);
-                eprintln!("{}^", " ".repeat(text.len()));
-                break;
-            }
-        };
-
-        match token.kind {
-            TokenKind::EOF => break,
-            TokenKind::OperatorAdd => {
-                let next_number = token_iter
-                    .next()
-                    .ok_or(CompileError::unexpected_eof(
-                        text.to_owned(),
-                        token.index_start,
-                    ))
-                    .and_then(|token| {
-                        token.integer_value().ok_or(CompileError::unexpected_token(
-                            text.to_owned(),
-                            token.index_start,
-                        ))
-                    })?;
-                result.push_str(&format!("   add rax, {}\n", next_number))
-            }
-            TokenKind::OperatorSub => {
-                let next_number = token_iter
-                    .next()
-                    .ok_or(CompileError::unexpected_eof(
-                        text.to_owned(),
-                        token.index_start,
-                    ))
-                    .and_then(|token| {
-                        token.integer_value().ok_or(CompileError::unexpected_token(
-                            text.to_owned(),
-                            token.index_start,
-                        ))
-                    })?;
-                result.push_str(&format!("   sub rax, {}\n", next_number))
-            }
-            _ => panic!("Unexpected token {:?}", token.kind),
-        }
-    }
-
-    result.push_str("ret\n");
+    let result = format!(
+        ".intel_syntax noprefix
+.global main
+main:
+    {}
+    pop rax
+    ret",
+        (node.into_x86_64_string()).replace("\n", "    \n")
+    );
 
     Ok(result)
 }
