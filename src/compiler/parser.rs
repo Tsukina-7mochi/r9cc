@@ -55,23 +55,37 @@ impl<'a> Parser<'a> {
     }
 
     fn consume_mul(&mut self) -> Result<Node> {
-        let mut node = self.consume_primary()?;
+        let mut node = self.consume_unary()?;
 
         loop {
             node = if self.consume_symbol_star().is_ok() {
                 Node::OperatorMul {
                     lhs: node.into(),
-                    rhs: self.consume_primary()?.into(),
+                    rhs: self.consume_unary()?.into(),
                 }
             } else if self.consume_symbol_slash().is_ok() {
                 Node::OperatorDiv {
                     lhs: node.into(),
-                    rhs: self.consume_primary()?.into(),
+                    rhs: self.consume_unary()?.into(),
                 }
             } else {
                 break Ok(node);
             }
         }
+    }
+
+    fn consume_unary(&mut self) -> Result<Node> {
+        if self.consume_symbol_plus().is_ok() {
+            return self.consume_primary();
+        } else if self.consume_symbol_minus().is_ok() {
+            let rhs = self.consume_primary()?;
+            return Ok(Node::OperatorSub {
+                lhs: Node::Integer { value: 0 }.into(),
+                rhs: rhs.into(),
+            });
+        }
+
+        self.consume_primary()
     }
 
     fn consume_primary(&mut self) -> Result<Node> {
@@ -258,6 +272,35 @@ mod tests {
                     })
                 }),
                 rhs: Box::new(Node::Integer { value: 6 })
+            }
+        );
+        assert!(parser.consume_eof().is_ok());
+    }
+
+    #[test]
+    fn unary_plus() {
+        let mut parser = Parser::new("  1 * + 2  ");
+        assert_eq!(
+            parser.consume_expr().unwrap(),
+            Node::OperatorMul {
+                lhs: Box::new(Node::Integer { value: 1 }),
+                rhs: Box::new(Node::Integer { value: 2 }),
+            }
+        );
+        assert!(parser.consume_eof().is_ok());
+    }
+
+    #[test]
+    fn unary_minus() {
+        let mut parser = Parser::new("  1 * - 2  ");
+        assert_eq!(
+            parser.consume_expr().unwrap(),
+            Node::OperatorMul {
+                lhs: Box::new(Node::Integer { value: 1 }),
+                rhs: Box::new(Node::OperatorSub {
+                    lhs: Box::new(Node::Integer { value: 0 }),
+                    rhs: Box::new(Node::Integer { value: 2 }),
+                }),
             }
         );
         assert!(parser.consume_eof().is_ok());
