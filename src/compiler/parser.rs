@@ -21,7 +21,8 @@ impl<'a> Parser<'a> {
 
     pub fn parse(&mut self) -> Result<Node> {
         let node = self.consume_expr()?;
-        self.consume_eof()?;
+        self.next_eof()
+            .ok_or_else(|| self.error_unexpected_token(vec![TokenKind::EOF]))?;
 
         Ok(node)
     }
@@ -38,12 +39,12 @@ impl<'a> Parser<'a> {
         let mut node = self.consume_mul()?;
 
         loop {
-            node = if self.consume_symbol_plus().is_ok() {
+            node = if self.next_symbol_plus().is_some() {
                 Node::OperatorAdd {
                     lhs: node.into(),
                     rhs: self.consume_mul()?.into(),
                 }
-            } else if self.consume_symbol_minus().is_ok() {
+            } else if self.next_symbol_minus().is_some() {
                 Node::OperatorSub {
                     lhs: node.into(),
                     rhs: self.consume_mul()?.into(),
@@ -58,12 +59,12 @@ impl<'a> Parser<'a> {
         let mut node = self.consume_unary()?;
 
         loop {
-            node = if self.consume_symbol_star().is_ok() {
+            node = if self.next_symbol_star().is_some() {
                 Node::OperatorMul {
                     lhs: node.into(),
                     rhs: self.consume_unary()?.into(),
                 }
-            } else if self.consume_symbol_slash().is_ok() {
+            } else if self.next_symbol_slash().is_some() {
                 Node::OperatorDiv {
                     lhs: node.into(),
                     rhs: self.consume_unary()?.into(),
@@ -75,9 +76,9 @@ impl<'a> Parser<'a> {
     }
 
     fn consume_unary(&mut self) -> Result<Node> {
-        if self.consume_symbol_plus().is_ok() {
+        if self.next_symbol_plus().is_some() {
             return self.consume_primary();
-        } else if self.consume_symbol_minus().is_ok() {
+        } else if self.next_symbol_minus().is_some() {
             let rhs = self.consume_primary()?;
             return Ok(Node::OperatorSub {
                 lhs: Node::Integer { value: 0 }.into(),
@@ -89,11 +90,13 @@ impl<'a> Parser<'a> {
     }
 
     fn consume_primary(&mut self) -> Result<Node> {
-        if let Ok(value) = self.consume_numeric() {
+        if let Some(value) = self.next_numeric_value() {
             Ok(Node::Integer { value })
-        } else if self.consume_symbol_round_bracket_left().is_ok() {
+        } else if self.next_symbol_round_bracket_left().is_some() {
             let node = self.consume_expr()?;
-            self.consume_symbol_round_bracket_right()?;
+            self.next_symbol_round_bracket_right().ok_or_else(|| {
+                self.error_unexpected_token(vec![TokenKind::SymbolRoundBracketRight])
+            })?;
             Ok(node)
         } else {
             Err(self.error_unexpected_token(vec![
@@ -103,67 +106,57 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn consume_numeric(&mut self) -> Result<i32> {
-        let token = match self.tokens.peek() {
-            Some(t) => t,
-            None => return Err(self.error_unexpected_token(vec![TokenKind::Integer(0)])),
-        };
+    fn next_numeric_value(&mut self) -> Option<i32> {
+        let token = self.tokens.peek()?;
 
         if let TokenKind::Integer(v) = token.kind {
             self.tokens.next();
-            Ok(v)
+            Some(v)
         } else {
-            Err(self.error_unexpected_token(vec![TokenKind::Integer(0)]))
+            None
         }
     }
 
-    fn consume_symbol_plus(&mut self) -> Result<()> {
+    fn next_symbol_plus(&mut self) -> Option<()> {
         self.tokens
             .next_if(|token| token.kind == TokenKind::SymbolPlus)
             .map(|_| ())
-            .ok_or(self.error_unexpected_token(vec![TokenKind::SymbolPlus]))
     }
 
-    fn consume_symbol_minus(&mut self) -> Result<()> {
+    fn next_symbol_minus(&mut self) -> Option<()> {
         self.tokens
             .next_if(|token| token.kind == TokenKind::SymbolMinus)
             .map(|_| ())
-            .ok_or(self.error_unexpected_token(vec![TokenKind::SymbolMinus]))
     }
 
-    fn consume_symbol_star(&mut self) -> Result<()> {
+    fn next_symbol_star(&mut self) -> Option<()> {
         self.tokens
             .next_if(|token| token.kind == TokenKind::SymbolStar)
             .map(|_| ())
-            .ok_or(self.error_unexpected_token(vec![TokenKind::SymbolStar]))
     }
 
-    fn consume_symbol_slash(&mut self) -> Result<()> {
+    fn next_symbol_slash(&mut self) -> Option<()> {
         self.tokens
             .next_if(|token| token.kind == TokenKind::SymbolSlash)
             .map(|_| ())
-            .ok_or(self.error_unexpected_token(vec![TokenKind::SymbolSlash]))
     }
 
-    fn consume_symbol_round_bracket_left(&mut self) -> Result<()> {
+    fn next_symbol_round_bracket_left(&mut self) -> Option<()> {
         self.tokens
             .next_if(|token| token.kind == TokenKind::SymbolRoundBracketLeft)
             .map(|_| ())
-            .ok_or(self.error_unexpected_token(vec![TokenKind::SymbolRoundBracketLeft]))
     }
 
-    fn consume_symbol_round_bracket_right(&mut self) -> Result<()> {
+    fn next_symbol_round_bracket_right(&mut self) -> Option<()> {
         self.tokens
             .next_if(|token| token.kind == TokenKind::SymbolRoundBracketRight)
             .map(|_| ())
-            .ok_or(self.error_unexpected_token(vec![TokenKind::SymbolRoundBracketRight]))
     }
 
-    fn consume_eof(&mut self) -> Result<()> {
+    fn next_eof(&mut self) -> Option<()> {
         self.tokens
             .next_if(|token| token.kind == TokenKind::EOF)
             .map(|_| ())
-            .ok_or(self.error_unexpected_token(vec![TokenKind::EOF]))
     }
 }
 
@@ -178,7 +171,7 @@ mod tests {
             parser.consume_expr().unwrap(),
             Node::Integer { value: 1234567890 }
         );
-        assert!(parser.consume_eof().is_ok());
+        assert!(parser.next_eof().is_some());
     }
 
     #[test]
@@ -191,7 +184,7 @@ mod tests {
                 rhs: Box::new(Node::Integer { value: 2 }),
             }
         );
-        assert!(parser.consume_eof().is_ok());
+        assert!(parser.next_eof().is_some());
     }
 
     #[test]
@@ -204,7 +197,7 @@ mod tests {
                 rhs: Box::new(Node::Integer { value: 2 }),
             }
         );
-        assert!(parser.consume_eof().is_ok());
+        assert!(parser.next_eof().is_some());
     }
 
     #[test]
@@ -217,7 +210,7 @@ mod tests {
                 rhs: Box::new(Node::Integer { value: 2 }),
             }
         );
-        assert!(parser.consume_eof().is_ok());
+        assert!(parser.next_eof().is_some());
     }
 
     #[test]
@@ -230,7 +223,7 @@ mod tests {
                 rhs: Box::new(Node::Integer { value: 2 }),
             }
         );
-        assert!(parser.consume_eof().is_ok());
+        assert!(parser.next_eof().is_some());
     }
 
     #[test]
@@ -249,7 +242,7 @@ mod tests {
                 }),
             }
         );
-        assert!(parser.consume_eof().is_ok());
+        assert!(parser.next_eof().is_some());
     }
 
     #[test]
@@ -274,7 +267,7 @@ mod tests {
                 rhs: Box::new(Node::Integer { value: 6 })
             }
         );
-        assert!(parser.consume_eof().is_ok());
+        assert!(parser.next_eof().is_some());
     }
 
     #[test]
@@ -287,7 +280,7 @@ mod tests {
                 rhs: Box::new(Node::Integer { value: 2 }),
             }
         );
-        assert!(parser.consume_eof().is_ok());
+        assert!(parser.next_eof().is_some());
     }
 
     #[test]
@@ -303,6 +296,6 @@ mod tests {
                 }),
             }
         );
-        assert!(parser.consume_eof().is_ok());
+        assert!(parser.next_eof().is_some());
     }
 }
