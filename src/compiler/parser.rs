@@ -1,17 +1,9 @@
 use std::iter::Peekable;
 
+use super::ast::Node;
 use super::error::{CompileError, Result};
 use super::token::TokenKind;
 use super::tokenizer::{Tokenizer, TokenizerIterator};
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum Node {
-    Integer { value: i32 },
-    OperatorAdd { lhs: Box<Node>, rhs: Box<Node> },
-    OperatorSub { lhs: Box<Node>, rhs: Box<Node> },
-    OperatorMul { lhs: Box<Node>, rhs: Box<Node> },
-    OperatorDiv { lhs: Box<Node>, rhs: Box<Node> },
-}
 
 pub struct Parser<'a> {
     text: &'a str,

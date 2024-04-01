@@ -1,3 +1,4 @@
+pub mod ast;
 mod compile;
 pub mod error;
 pub mod parser;
