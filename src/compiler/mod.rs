@@ -1,3 +1,4 @@
+pub mod asm;
 pub mod ast;
 mod compile;
 pub mod error;
