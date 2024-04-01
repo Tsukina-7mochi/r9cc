@@ -34,12 +34,12 @@ impl<'a> Tokenizer<'a> {
     pub fn consume_char(&mut self) -> Option<Token> {
         let token = match self.text.get(self.index) {
             None => Some(Token::new(TokenKind::EOF, self.index)),
-            Some(b'+') => Some(Token::new(TokenKind::OperatorAdd, self.index)),
-            Some(b'-') => Some(Token::new(TokenKind::OperatorSub, self.index)),
-            Some(b'*') => Some(Token::new(TokenKind::OperatorMul, self.index)),
-            Some(b'/') => Some(Token::new(TokenKind::OperatorDiv, self.index)),
-            Some(b'(') => Some(Token::new(TokenKind::RoundBracketLeft, self.index)),
-            Some(b')') => Some(Token::new(TokenKind::RoundBracketRight, self.index)),
+            Some(b'+') => Some(Token::new(TokenKind::SymbolPlus, self.index)),
+            Some(b'-') => Some(Token::new(TokenKind::SymbolMinus, self.index)),
+            Some(b'*') => Some(Token::new(TokenKind::SymbolStar, self.index)),
+            Some(b'/') => Some(Token::new(TokenKind::SymbolSlash, self.index)),
+            Some(b'(') => Some(Token::new(TokenKind::SymbolRoundBracketLeft, self.index)),
+            Some(b')') => Some(Token::new(TokenKind::SymbolRoundBracketRight, self.index)),
             _ => None,
         };
 

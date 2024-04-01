@@ -38,12 +38,12 @@ impl<'a> Parser<'a> {
         let mut node = self.consume_mul()?;
 
         loop {
-            node = if self.consume_operator_add().is_ok() {
+            node = if self.consume_symbol_plus().is_ok() {
                 Node::OperatorAdd {
                     lhs: node.into(),
                     rhs: self.consume_mul()?.into(),
                 }
-            } else if self.consume_operator_sub().is_ok() {
+            } else if self.consume_symbol_minus().is_ok() {
                 Node::OperatorSub {
                     lhs: node.into(),
                     rhs: self.consume_mul()?.into(),
@@ -58,12 +58,12 @@ impl<'a> Parser<'a> {
         let mut node = self.consume_primary()?;
 
         loop {
-            node = if self.consume_operator_mul().is_ok() {
+            node = if self.consume_symbol_star().is_ok() {
                 Node::OperatorMul {
                     lhs: node.into(),
                     rhs: self.consume_primary()?.into(),
                 }
-            } else if self.consume_operator_div().is_ok() {
+            } else if self.consume_symbol_slash().is_ok() {
                 Node::OperatorDiv {
                     lhs: node.into(),
                     rhs: self.consume_primary()?.into(),
@@ -77,13 +77,15 @@ impl<'a> Parser<'a> {
     fn consume_primary(&mut self) -> Result<Node> {
         if let Ok(value) = self.consume_numeric() {
             Ok(Node::Integer { value })
-        } else if self.consume_round_bracket_left().is_ok() {
+        } else if self.consume_symbol_round_bracket_left().is_ok() {
             let node = self.consume_expr()?;
-            self.consume_round_bracket_right()?;
+            self.consume_symbol_round_bracket_right()?;
             Ok(node)
         } else {
-            Err(self
-                .error_unexpected_token(vec![TokenKind::Integer(0), TokenKind::RoundBracketLeft]))
+            Err(self.error_unexpected_token(vec![
+                TokenKind::Integer(0),
+                TokenKind::SymbolRoundBracketLeft,
+            ]))
         }
     }
 
@@ -101,46 +103,46 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn consume_operator_add(&mut self) -> Result<()> {
+    fn consume_symbol_plus(&mut self) -> Result<()> {
         self.tokens
-            .next_if(|token| token.kind == TokenKind::OperatorAdd)
+            .next_if(|token| token.kind == TokenKind::SymbolPlus)
             .map(|_| ())
-            .ok_or(self.error_unexpected_token(vec![TokenKind::OperatorAdd]))
+            .ok_or(self.error_unexpected_token(vec![TokenKind::SymbolPlus]))
     }
 
-    fn consume_operator_sub(&mut self) -> Result<()> {
+    fn consume_symbol_minus(&mut self) -> Result<()> {
         self.tokens
-            .next_if(|token| token.kind == TokenKind::OperatorSub)
+            .next_if(|token| token.kind == TokenKind::SymbolMinus)
             .map(|_| ())
-            .ok_or(self.error_unexpected_token(vec![TokenKind::OperatorSub]))
+            .ok_or(self.error_unexpected_token(vec![TokenKind::SymbolMinus]))
     }
 
-    fn consume_operator_mul(&mut self) -> Result<()> {
+    fn consume_symbol_star(&mut self) -> Result<()> {
         self.tokens
-            .next_if(|token| token.kind == TokenKind::OperatorMul)
+            .next_if(|token| token.kind == TokenKind::SymbolStar)
             .map(|_| ())
-            .ok_or(self.error_unexpected_token(vec![TokenKind::OperatorMul]))
+            .ok_or(self.error_unexpected_token(vec![TokenKind::SymbolStar]))
     }
 
-    fn consume_operator_div(&mut self) -> Result<()> {
+    fn consume_symbol_slash(&mut self) -> Result<()> {
         self.tokens
-            .next_if(|token| token.kind == TokenKind::OperatorDiv)
+            .next_if(|token| token.kind == TokenKind::SymbolSlash)
             .map(|_| ())
-            .ok_or(self.error_unexpected_token(vec![TokenKind::OperatorDiv]))
+            .ok_or(self.error_unexpected_token(vec![TokenKind::SymbolSlash]))
     }
 
-    fn consume_round_bracket_left(&mut self) -> Result<()> {
+    fn consume_symbol_round_bracket_left(&mut self) -> Result<()> {
         self.tokens
-            .next_if(|token| token.kind == TokenKind::RoundBracketLeft)
+            .next_if(|token| token.kind == TokenKind::SymbolRoundBracketLeft)
             .map(|_| ())
-            .ok_or(self.error_unexpected_token(vec![TokenKind::RoundBracketLeft]))
+            .ok_or(self.error_unexpected_token(vec![TokenKind::SymbolRoundBracketLeft]))
     }
 
-    fn consume_round_bracket_right(&mut self) -> Result<()> {
+    fn consume_symbol_round_bracket_right(&mut self) -> Result<()> {
         self.tokens
-            .next_if(|token| token.kind == TokenKind::RoundBracketRight)
+            .next_if(|token| token.kind == TokenKind::SymbolRoundBracketRight)
             .map(|_| ())
-            .ok_or(self.error_unexpected_token(vec![TokenKind::RoundBracketRight]))
+            .ok_or(self.error_unexpected_token(vec![TokenKind::SymbolRoundBracketRight]))
     }
 
     fn consume_eof(&mut self) -> Result<()> {

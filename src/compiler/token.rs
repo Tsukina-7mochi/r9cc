@@ -1,12 +1,12 @@
 #[derive(Debug, PartialEq, Eq)]
 pub enum TokenKind {
     Integer(i32),
-    OperatorAdd,
-    OperatorSub,
-    OperatorMul,
-    OperatorDiv,
-    RoundBracketLeft,
-    RoundBracketRight,
+    SymbolPlus,
+    SymbolMinus,
+    SymbolStar,
+    SymbolSlash,
+    SymbolRoundBracketLeft,
+    SymbolRoundBracketRight,
     EOF,
 }
 
