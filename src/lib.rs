@@ -1,3 +1,3 @@
-pub mod compiler;
+mod compiler;
 
-pub use compiler::*;
+pub use compiler::compile;

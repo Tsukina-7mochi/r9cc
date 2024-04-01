@@ -1,7 +1,7 @@
 use std::error;
 use std::fmt;
 
-use super::token::TokenKind;
+use crate::compiler::token::TokenKind;
 
 pub type Result<T = ()> = std::result::Result<T, CompileError>;
 

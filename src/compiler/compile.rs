@@ -1,6 +1,6 @@
-use super::asm::x86_64;
-use super::error::Result;
-use super::parser::Parser;
+use crate::compiler::asm::x86_64;
+use crate::compiler::error::Result;
+use crate::compiler::parser::Parser;
 
 pub fn compile(text: &str) -> Result<String> {
     let text = text.trim();

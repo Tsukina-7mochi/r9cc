@@ -1,4 +1,4 @@
-use super::token::{Token, TokenKind};
+use crate::compiler::token::{Token, TokenKind};
 
 mod re {
     use once_cell::sync::Lazy;

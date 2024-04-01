@@ -6,4 +6,4 @@ pub mod parser;
 pub mod token;
 pub mod tokenizer;
 
-pub use compile::compile;
+pub use compile::*;

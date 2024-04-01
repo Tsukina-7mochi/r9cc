@@ -1,9 +1,9 @@
 use std::iter::Peekable;
 
-use super::ast::Node;
-use super::error::{CompileError, Result};
-use super::token::TokenKind;
-use super::tokenizer::{Tokenizer, TokenizerIterator};
+use crate::compiler::ast::Node;
+use crate::compiler::error::{CompileError, Result};
+use crate::compiler::token::TokenKind;
+use crate::compiler::tokenizer::{Tokenizer, TokenizerIterator};
 
 pub struct Parser<'a> {
     text: &'a str,

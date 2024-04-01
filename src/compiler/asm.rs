@@ -1,5 +1,5 @@
 pub mod x86_64 {
-    use crate::ast::Node;
+    use crate::compiler::ast::Node;
 
     trait IntoX86_64Instructions {
         fn into_x86_64_string(&self) -> String;
