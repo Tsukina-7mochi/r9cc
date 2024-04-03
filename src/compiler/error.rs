@@ -15,6 +15,12 @@ impl TokenKind {
             Self::SymbolSlash => "'/'",
             TokenKind::SymbolRoundBracketLeft => "'('",
             Self::SymbolRoundBracketRight => "')'",
+            Self::SymbolAngleBracketLeft => "'<'",
+            Self::SymbolAngleBracketRight => "'>'",
+            Self::SymbolAngleBracketLeftAndEqual => "'<='",
+            Self::SymbolAngleBracketRightAndEqual => "'>='",
+            Self::SymbolDoubleEqual => "'=='",
+            Self::SymbolExclamationAndEqual => "'!='",
             Self::EOF => "EOF",
         }
     }

@@ -7,6 +7,12 @@ pub enum TokenKind {
     SymbolSlash,
     SymbolRoundBracketLeft,
     SymbolRoundBracketRight,
+    SymbolAngleBracketLeft,
+    SymbolAngleBracketRight,
+    SymbolAngleBracketLeftAndEqual,
+    SymbolAngleBracketRightAndEqual,
+    SymbolDoubleEqual,
+    SymbolExclamationAndEqual,
     EOF,
 }
 

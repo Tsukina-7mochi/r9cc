@@ -58,6 +58,7 @@ pub mod x86_64 {
                         rhs.into_x86_64_string(),
                     )
                 }
+                _ => panic!("not implemented"),
             }
         }
     }

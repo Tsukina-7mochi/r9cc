@@ -40,11 +40,36 @@ impl<'a> Tokenizer<'a> {
             Some(b'/') => Some(Token::new(TokenKind::SymbolSlash, self.index)),
             Some(b'(') => Some(Token::new(TokenKind::SymbolRoundBracketLeft, self.index)),
             Some(b')') => Some(Token::new(TokenKind::SymbolRoundBracketRight, self.index)),
+            Some(b'<') => Some(Token::new(TokenKind::SymbolAngleBracketLeft, self.index)),
+            Some(b'>') => Some(Token::new(TokenKind::SymbolAngleBracketRight, self.index)),
             _ => None,
         };
 
         if token.is_some() {
             self.index += 1;
+        }
+
+        token
+    }
+
+    pub fn consume_2_chars(&mut self) -> Option<Token> {
+        let chars = (self.text.get(self.index)?, self.text.get(self.index + 1)?);
+        let token = match chars {
+            (b'<', b'=') => Some(Token::new(
+                TokenKind::SymbolAngleBracketLeftAndEqual,
+                self.index,
+            )),
+            (b'>', b'=') => Some(Token::new(
+                TokenKind::SymbolAngleBracketRightAndEqual,
+                self.index,
+            )),
+            (b'=', b'=') => Some(Token::new(TokenKind::SymbolDoubleEqual, self.index)),
+            (b'!', b'=') => Some(Token::new(TokenKind::SymbolExclamationAndEqual, self.index)),
+            _ => None,
+        };
+
+        if token.is_some() {
+            self.index += 2;
         }
 
         token
@@ -73,7 +98,9 @@ impl<'a> Tokenizer<'a> {
     pub fn consume(&mut self) -> Option<Token> {
         self.skip_whitespaces();
 
-        self.consume_char().or_else(|| self.consume_integer())
+        None.or_else(|| self.consume_2_chars())
+            .or_else(|| self.consume_char())
+            .or_else(|| self.consume_integer())
     }
 }
 

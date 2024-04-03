@@ -36,6 +36,60 @@ impl<'a> Parser<'a> {
     }
 
     fn consume_expr(&mut self) -> Result<Node> {
+        self.consume_equality()
+    }
+
+    fn consume_equality(&mut self) -> Result<Node> {
+        let mut node = self.consume_relational()?;
+
+        loop {
+            node = if self.next_symbol_double_equal().is_some() {
+                Node::OperatorEq {
+                    lhs: node.into(),
+                    rhs: self.consume_relational()?.into(),
+                }
+            } else if self.next_symbol_exclamation_and_equal().is_some() {
+                Node::OperatorNe {
+                    lhs: node.into(),
+                    rhs: self.consume_relational()?.into(),
+                }
+            } else {
+                break Ok(node);
+            }
+        }
+    }
+
+    fn consume_relational(&mut self) -> Result<Node> {
+        let mut node = self.consume_add()?;
+
+        loop {
+            node = if self.next_symbol_angle_bracket_left().is_some() {
+                Node::OperatorLt {
+                    lhs: node.into(),
+                    rhs: self.consume_add()?.into(),
+                }
+            } else if self.next_symbol_angle_bracket_right().is_some() {
+                Node::OperatorLt {
+                    lhs: self.consume_add()?.into(),
+                    rhs: node.into(),
+                }
+            } else if self.next_symbol_angle_bracket_left_and_equal().is_some() {
+                Node::OperatorLtEq {
+                    lhs: node.into(),
+                    rhs: self.consume_add()?.into(),
+                }
+            } else if self.next_symbol_angle_bracket_right_and_equal().is_some() {
+                Node::OperatorLtEq {
+                    lhs: self.consume_add()?.into(),
+                    rhs: node.into(),
+                }
+            } else {
+                break Ok(node);
+            }
+        }
+    }
+
+    fn consume_add(&mut self) -> Result<Node> {
         let mut node = self.consume_mul()?;
 
         loop {
@@ -150,6 +204,42 @@ impl<'a> Parser<'a> {
     fn next_symbol_round_bracket_right(&mut self) -> Option<()> {
         self.tokens
             .next_if(|token| token.kind == TokenKind::SymbolRoundBracketRight)
+            .map(|_| ())
+    }
+
+    fn next_symbol_angle_bracket_left(&mut self) -> Option<()> {
+        self.tokens
+            .next_if(|token| token.kind == TokenKind::SymbolAngleBracketLeft)
+            .map(|_| ())
+    }
+
+    fn next_symbol_angle_bracket_right(&mut self) -> Option<()> {
+        self.tokens
+            .next_if(|token| token.kind == TokenKind::SymbolAngleBracketRight)
+            .map(|_| ())
+    }
+
+    fn next_symbol_angle_bracket_left_and_equal(&mut self) -> Option<()> {
+        self.tokens
+            .next_if(|token| token.kind == TokenKind::SymbolAngleBracketLeftAndEqual)
+            .map(|_| ())
+    }
+
+    fn next_symbol_angle_bracket_right_and_equal(&mut self) -> Option<()> {
+        self.tokens
+            .next_if(|token| token.kind == TokenKind::SymbolAngleBracketRightAndEqual)
+            .map(|_| ())
+    }
+
+    fn next_symbol_double_equal(&mut self) -> Option<()> {
+        self.tokens
+            .next_if(|token| token.kind == TokenKind::SymbolDoubleEqual)
+            .map(|_| ())
+    }
+
+    fn next_symbol_exclamation_and_equal(&mut self) -> Option<()> {
+        self.tokens
+            .next_if(|token| token.kind == TokenKind::SymbolExclamationAndEqual)
             .map(|_| ())
     }
 
@@ -297,5 +387,50 @@ mod tests {
             }
         );
         assert!(parser.next_eof().is_some());
+    }
+
+    #[test]
+    fn lt_gt() {
+        let mut parser = Parser::new("  1 < 2 > 3  ");
+        assert_eq!(
+            parser.consume_expr().unwrap(),
+            Node::OperatorLt {
+                lhs: Box::new(Node::Integer { value: 3 }),
+                rhs: Box::new(Node::OperatorLt {
+                    lhs: Box::new(Node::Integer { value: 1 }),
+                    rhs: Box::new(Node::Integer { value: 2 }),
+                }),
+            }
+        )
+    }
+
+    #[test]
+    fn lteq_gteq() {
+        let mut parser = Parser::new("  1 <= 2 >= 3  ");
+        assert_eq!(
+            parser.consume_expr().unwrap(),
+            Node::OperatorLtEq {
+                lhs: Box::new(Node::Integer { value: 3 }),
+                rhs: Box::new(Node::OperatorLtEq {
+                    lhs: Box::new(Node::Integer { value: 1 }),
+                    rhs: Box::new(Node::Integer { value: 2 }),
+                }),
+            }
+        )
+    }
+
+    #[test]
+    fn eq_ne() {
+        let mut parser = Parser::new("  1 == 2 != 3  ");
+        assert_eq!(
+            parser.consume_expr().unwrap(),
+            Node::OperatorNe {
+                lhs: Box::new(Node::OperatorEq {
+                    lhs: Box::new(Node::Integer { value: 1 }),
+                    rhs: Box::new(Node::Integer { value: 2 }),
+                }),
+                rhs: Box::new(Node::Integer { value: 3 })
+            }
+        )
     }
 }
