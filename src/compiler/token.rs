@@ -1,6 +1,7 @@
 #[derive(Debug, PartialEq, Eq)]
 pub enum TokenKind {
     Integer(i32),
+    Identifier(u8),
     SymbolPlus,
     SymbolMinus,
     SymbolStar,

@@ -9,6 +9,7 @@ impl TokenKind {
     fn token_kind_display(&self) -> &str {
         match self {
             Self::Integer(_) => "integer",
+            Self::Identifier(_) => "identifier",
             Self::SymbolPlus => "'+'",
             Self::SymbolMinus => "'-'",
             Self::SymbolStar => "'*'",
