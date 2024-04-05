@@ -126,7 +126,7 @@ main:
     {}
     pop rax
     ret",
-            (node.into_x86_64_string()).replace("\n", "    \n")
+            (node.into_x86_64_string()).replace("\n", "\n    ")
         )
     }
 }
