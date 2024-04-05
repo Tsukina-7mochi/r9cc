@@ -58,7 +58,62 @@ pub mod x86_64 {
                         rhs.into_x86_64_string(),
                     )
                 }
-                _ => panic!("not implemented"),
+                Node::OperatorLt { lhs, rhs } => {
+                    format!(
+                        "{}\n\
+                         {}\n\
+                         pop rdi\n\
+                         pop rax\n\
+                         cmp rax, rdi\n\
+                         setl al\n\
+                         movzb rax, al\n\
+                         push rax",
+                        lhs.into_x86_64_string(),
+                        rhs.into_x86_64_string(),
+                    )
+                }
+                Node::OperatorLtEq { lhs, rhs } => {
+                    format!(
+                        "{}\n\
+                         {}\n\
+                         pop rdi\n\
+                         pop rax\n\
+                         cmp rax, rdi\n\
+                         setle al\n\
+                         movzb rax, al\n\
+                         push rax",
+                        lhs.into_x86_64_string(),
+                        rhs.into_x86_64_string(),
+                    )
+                }
+                Node::OperatorEq { lhs, rhs } => {
+                    format!(
+                        "{}\n\
+                         {}\n\
+                         pop rdi\n\
+                         pop rax\n\
+                         cmp rax, rdi\n\
+                         sete al\n\
+                         movzb rax, al\n\
+                         push rax",
+                        lhs.into_x86_64_string(),
+                        rhs.into_x86_64_string(),
+                    )
+                }
+                Node::OperatorNe { lhs, rhs } => {
+                    format!(
+                        "{}\n\
+                         {}\n\
+                         pop rdi\n\
+                         pop rax\n\
+                         cmp rax, rdi\n\
+                         setne al\n\
+                         movzb rax, al\n\
+                         push rax",
+                        lhs.into_x86_64_string(),
+                        rhs.into_x86_64_string(),
+                    )
+                }
             }
         }
     }
