@@ -14,6 +14,8 @@ pub enum TokenKind {
     SymbolAngleBracketRightAndEqual,
     SymbolDoubleEqual,
     SymbolExclamationAndEqual,
+    SymbolEqual,
+    SymbolSemicolon,
     EOF,
 }
 

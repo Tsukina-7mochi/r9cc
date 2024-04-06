@@ -22,6 +22,8 @@ impl TokenKind {
             Self::SymbolAngleBracketRightAndEqual => "'>='",
             Self::SymbolDoubleEqual => "'=='",
             Self::SymbolExclamationAndEqual => "'!='",
+            Self::SymbolEqual => "'='",
+            Self::SymbolSemicolon => "';'",
             Self::EOF => "EOF",
         }
     }
@@ -31,6 +33,7 @@ impl TokenKind {
 pub enum CompileErrorKind {
     UnexpectedToken { expected: Vec<TokenKind> },
     UnexpectedEOF,
+    NotALeftValue,
 }
 
 #[derive(Debug)]
@@ -50,6 +53,13 @@ impl CompileError {
     pub fn unexpected_eof(index_start: usize) -> Self {
         Self {
             kind: CompileErrorKind::UnexpectedEOF,
+            index_start,
+        }
+    }
+
+    pub fn not_a_left_value(index_start: usize) -> Self {
+        Self {
+            kind: CompileErrorKind::NotALeftValue,
             index_start,
         }
     }
@@ -78,6 +88,9 @@ impl fmt::Display for CompileError {
             }
             CompileErrorKind::UnexpectedEOF => {
                 writeln!(f, "unexpected EOF at {}", self.index_start)?;
+            }
+            CompileErrorKind::NotALeftValue => {
+                writeln!(f, "left value expected at {}", self.index_start)?;
             }
         }
 

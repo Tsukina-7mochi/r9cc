@@ -20,11 +20,14 @@ impl<'a> Parser<'a> {
     }
 
     pub fn parse(&mut self) -> Result<Node> {
-        let node = self.consume_expr()?;
-        self.next_eof()
-            .ok_or_else(|| self.error_unexpected_token(vec![TokenKind::EOF]))?;
+        let mut statements = Vec::<Node>::new();
+        while self.next_eof().is_none() {
+            statements.push(self.consume_statement()?);
+        }
 
-        Ok(node)
+        Ok(Node::Block {
+            statements: statements,
+        })
     }
 
     fn current_index_in_text(&mut self) -> Option<usize> {
@@ -39,8 +42,38 @@ impl<'a> Parser<'a> {
         )
     }
 
+    fn consume_statement(&mut self) -> Result<Node> {
+        let expr = self.consume_expr()?;
+        if self.next_symbol_semicolon().is_none() {
+            return Err(self.error_unexpected_token(vec![TokenKind::SymbolSemicolon]));
+        }
+
+        Ok(expr)
+    }
+
     fn consume_expr(&mut self) -> Result<Node> {
-        self.consume_equality()
+        self.consume_assign()
+    }
+
+    fn consume_assign(&mut self) -> Result<Node> {
+        let index = self
+            .current_index_in_text()
+            .unwrap_or_else(|| self.text.len());
+        let equality = self.consume_equality()?;
+
+        if self.next_symbol_equal().is_some() {
+            if !equality.is_left_value() {
+                return Err(CompileError::not_a_left_value(index));
+            }
+
+            let assign = self.consume_assign()?;
+            Ok(Node::OperatorAssign {
+                lhs: equality.into(),
+                rhs: assign.into(),
+            })
+        } else {
+            Ok(equality)
+        }
     }
 
     fn consume_equality(&mut self) -> Result<Node> {
@@ -150,6 +183,11 @@ impl<'a> Parser<'a> {
     fn consume_primary(&mut self) -> Result<Node> {
         if let Some(value) = self.next_numeric_value() {
             Ok(Node::Integer { value })
+        } else if let Some(value) = self.next_identifier() {
+            Ok(Node::LocalVariable {
+                identifier: value,
+                offset: (value - b'a') as usize,
+            })
         } else if self.next_symbol_round_bracket_left().is_some() {
             let node = self.consume_expr()?;
             self.next_symbol_round_bracket_right().ok_or_else(|| {
@@ -168,6 +206,17 @@ impl<'a> Parser<'a> {
         let token = self.tokens.peek()?;
 
         if let TokenKind::Integer(v) = token.kind {
+            self.tokens.next();
+            Some(v)
+        } else {
+            None
+        }
+    }
+
+    fn next_identifier(&mut self) -> Option<u8> {
+        let token = self.tokens.peek()?;
+
+        if let TokenKind::Identifier(v) = token.kind {
             self.tokens.next();
             Some(v)
         } else {
@@ -247,6 +296,18 @@ impl<'a> Parser<'a> {
             .map(|_| ())
     }
 
+    fn next_symbol_equal(&mut self) -> Option<()> {
+        self.tokens
+            .next_if(|token| token.kind == TokenKind::SymbolEqual)
+            .map(|_| ())
+    }
+
+    fn next_symbol_semicolon(&mut self) -> Option<()> {
+        self.tokens
+            .next_if(|token| token.kind == TokenKind::SymbolSemicolon)
+            .map(|_| ())
+    }
+
     fn next_eof(&mut self) -> Option<()> {
         self.tokens
             .next_if(|token| token.kind == TokenKind::EOF)
@@ -260,9 +321,9 @@ mod tests {
 
     #[test]
     fn number() {
-        let mut parser = Parser::new("  1234567890  ");
+        let mut parser = Parser::new("  1234567890 ;  ");
         assert_eq!(
-            parser.consume_expr().unwrap(),
+            parser.consume_statement().unwrap(),
             Node::Integer { value: 1234567890 }
         );
         assert!(parser.next_eof().is_some());
@@ -270,9 +331,9 @@ mod tests {
 
     #[test]
     fn add() {
-        let mut parser = Parser::new("  1 + 2  ");
+        let mut parser = Parser::new("  1 + 2 ;  ");
         assert_eq!(
-            parser.consume_expr().unwrap(),
+            parser.consume_statement().unwrap(),
             Node::OperatorAdd {
                 lhs: Box::new(Node::Integer { value: 1 }),
                 rhs: Box::new(Node::Integer { value: 2 }),
@@ -283,9 +344,9 @@ mod tests {
 
     #[test]
     fn sub() {
-        let mut parser = Parser::new("  1 - 2  ");
+        let mut parser = Parser::new("  1 - 2 ;  ");
         assert_eq!(
-            parser.consume_expr().unwrap(),
+            parser.consume_statement().unwrap(),
             Node::OperatorSub {
                 lhs: Box::new(Node::Integer { value: 1 }),
                 rhs: Box::new(Node::Integer { value: 2 }),
@@ -296,9 +357,9 @@ mod tests {
 
     #[test]
     fn mul() {
-        let mut parser = Parser::new("  1 * 2  ");
+        let mut parser = Parser::new("  1 * 2 ;  ");
         assert_eq!(
-            parser.consume_expr().unwrap(),
+            parser.consume_statement().unwrap(),
             Node::OperatorMul {
                 lhs: Box::new(Node::Integer { value: 1 }),
                 rhs: Box::new(Node::Integer { value: 2 }),
@@ -309,9 +370,9 @@ mod tests {
 
     #[test]
     fn div() {
-        let mut parser = Parser::new("  1 / 2  ");
+        let mut parser = Parser::new("  1 / 2 ;  ");
         assert_eq!(
-            parser.consume_expr().unwrap(),
+            parser.consume_statement().unwrap(),
             Node::OperatorDiv {
                 lhs: Box::new(Node::Integer { value: 1 }),
                 rhs: Box::new(Node::Integer { value: 2 }),
@@ -322,9 +383,9 @@ mod tests {
 
     #[test]
     fn mul_and_add() {
-        let mut parser = Parser::new("  1 * 2 + 3 / 4  ");
+        let mut parser = Parser::new("  1 * 2 + 3 / 4 ;  ");
         assert_eq!(
-            parser.consume_expr().unwrap(),
+            parser.consume_statement().unwrap(),
             Node::OperatorAdd {
                 lhs: Box::new(Node::OperatorMul {
                     lhs: Box::new(Node::Integer { value: 1 }),
@@ -341,9 +402,9 @@ mod tests {
 
     #[test]
     fn nested_expression() {
-        let mut parser = Parser::new("  (1 + 2 * 3) / (4 - 5) + 6  ");
+        let mut parser = Parser::new("  (1 + 2 * 3) / (4 - 5) + 6 ;  ");
         assert_eq!(
-            parser.consume_expr().unwrap(),
+            parser.consume_statement().unwrap(),
             Node::OperatorAdd {
                 lhs: Box::new(Node::OperatorDiv {
                     lhs: Box::new(Node::OperatorAdd {
@@ -366,9 +427,9 @@ mod tests {
 
     #[test]
     fn unary_plus() {
-        let mut parser = Parser::new("  1 * + 2  ");
+        let mut parser = Parser::new("  1 * + 2 ;  ");
         assert_eq!(
-            parser.consume_expr().unwrap(),
+            parser.consume_statement().unwrap(),
             Node::OperatorMul {
                 lhs: Box::new(Node::Integer { value: 1 }),
                 rhs: Box::new(Node::Integer { value: 2 }),
@@ -379,9 +440,9 @@ mod tests {
 
     #[test]
     fn unary_minus() {
-        let mut parser = Parser::new("  1 * - 2  ");
+        let mut parser = Parser::new("  1 * - 2 ;  ");
         assert_eq!(
-            parser.consume_expr().unwrap(),
+            parser.consume_statement().unwrap(),
             Node::OperatorMul {
                 lhs: Box::new(Node::Integer { value: 1 }),
                 rhs: Box::new(Node::OperatorSub {
@@ -395,9 +456,9 @@ mod tests {
 
     #[test]
     fn lt_gt() {
-        let mut parser = Parser::new("  1 < 2 > 3  ");
+        let mut parser = Parser::new("  1 < 2 > 3 ;  ");
         assert_eq!(
-            parser.consume_expr().unwrap(),
+            parser.consume_statement().unwrap(),
             Node::OperatorLt {
                 lhs: Box::new(Node::Integer { value: 3 }),
                 rhs: Box::new(Node::OperatorLt {
@@ -410,9 +471,9 @@ mod tests {
 
     #[test]
     fn lteq_gteq() {
-        let mut parser = Parser::new("  1 <= 2 >= 3  ");
+        let mut parser = Parser::new("  1 <= 2 >= 3 ;  ");
         assert_eq!(
-            parser.consume_expr().unwrap(),
+            parser.consume_statement().unwrap(),
             Node::OperatorLtEq {
                 lhs: Box::new(Node::Integer { value: 3 }),
                 rhs: Box::new(Node::OperatorLtEq {
@@ -425,15 +486,53 @@ mod tests {
 
     #[test]
     fn eq_ne() {
-        let mut parser = Parser::new("  1 == 2 != 3  ");
+        let mut parser = Parser::new("  1 == 2 != 3 ;  ");
         assert_eq!(
-            parser.consume_expr().unwrap(),
+            parser.consume_statement().unwrap(),
             Node::OperatorNe {
                 lhs: Box::new(Node::OperatorEq {
                     lhs: Box::new(Node::Integer { value: 1 }),
                     rhs: Box::new(Node::Integer { value: 2 }),
                 }),
                 rhs: Box::new(Node::Integer { value: 3 })
+            }
+        )
+    }
+
+    #[test]
+    fn assignment() {
+        let mut parser = Parser::new("  c = 1 + 2 ;  ");
+        assert_eq!(
+            parser.consume_statement().unwrap(),
+            Node::OperatorAssign {
+                lhs: Box::new(Node::LocalVariable {
+                    identifier: b'c',
+                    offset: 2
+                }),
+                rhs: Box::new(Node::OperatorAdd {
+                    lhs: Box::new(Node::Integer { value: 1 }),
+                    rhs: Box::new(Node::Integer { value: 2 }),
+                }),
+            }
+        )
+    }
+
+    #[test]
+    fn multiple_statements() {
+        let mut parser = Parser::new("  1 + 2; a;  ");
+        assert_eq!(
+            parser.parse().unwrap(),
+            Node::Block {
+                statements: vec![
+                    Node::OperatorAdd {
+                        lhs: Box::new(Node::Integer { value: 1 }),
+                        rhs: Box::new(Node::Integer { value: 2 })
+                    },
+                    Node::LocalVariable {
+                        identifier: b'a',
+                        offset: 0
+                    }
+                ]
             }
         )
     }
