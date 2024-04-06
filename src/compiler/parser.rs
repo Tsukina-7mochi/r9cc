@@ -33,7 +33,6 @@ impl<'a> Parser<'a> {
 
     fn error_unexpected_token(&mut self, expected: Vec<TokenKind>) -> CompileError {
         CompileError::unexpected_token(
-            self.text,
             self.current_index_in_text()
                 .unwrap_or_else(|| self.text.len()),
             expected,

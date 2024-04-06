@@ -9,6 +9,9 @@ fn main() {
     let result = r9cc::compile(&buffer);
     match result {
         Ok(result) => println!("{}", result),
-        Err(err) => print!("{}", err),
+        Err(err) => {
+            let error_formatter = err.into_formatter(&buffer);
+            print!("{}", error_formatter);
+        }
     }
 }

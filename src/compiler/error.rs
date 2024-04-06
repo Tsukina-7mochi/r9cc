@@ -36,25 +36,26 @@ pub enum CompileErrorKind {
 #[derive(Debug)]
 pub struct CompileError {
     kind: CompileErrorKind,
-    text: String,
     index_start: usize,
 }
 
 impl CompileError {
-    pub fn unexpected_token(text: &str, index_start: usize, expected: Vec<TokenKind>) -> Self {
+    pub fn unexpected_token(index_start: usize, expected: Vec<TokenKind>) -> Self {
         Self {
             kind: CompileErrorKind::UnexpectedToken { expected },
-            text: text.to_owned(),
             index_start,
         }
     }
 
-    pub fn unexpected_eof(text: &str, index_start: usize) -> Self {
+    pub fn unexpected_eof(index_start: usize) -> Self {
         Self {
             kind: CompileErrorKind::UnexpectedEOF,
-            text: text.to_owned(),
             index_start,
         }
+    }
+
+    pub fn into_formatter<'a>(self, text: &'a str) -> CompileErrorFormatter<'a> {
+        CompileErrorFormatter::new(self, text)
     }
 }
 
@@ -80,9 +81,6 @@ impl fmt::Display for CompileError {
             }
         }
 
-        writeln!(f, "{}", self.text)?;
-        writeln!(f, "{}^", " ".repeat(self.index_start))?;
-
         Ok(())
     }
 }
@@ -90,5 +88,27 @@ impl fmt::Display for CompileError {
 impl error::Error for CompileError {
     fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         None
+    }
+}
+
+pub struct CompileErrorFormatter<'a> {
+    error: CompileError,
+    text: &'a str,
+}
+
+impl<'a> CompileErrorFormatter<'a> {
+    pub fn new(error: CompileError, text: &'a str) -> Self {
+        Self { error, text }
+    }
+}
+
+impl<'a> fmt::Display for CompileErrorFormatter<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        writeln!(f, "{}", self.error)?;
+
+        write!(f, "{}", self.text)?;
+        writeln!(f, "{}^", " ".repeat(self.error.index_start))?;
+
+        Ok(())
     }
 }
