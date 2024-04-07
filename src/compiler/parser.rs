@@ -51,15 +51,15 @@ impl<'a> Parser<'a> {
     }
 
     fn consume_statement(&mut self) -> Result<Node> {
-        let expr = self.consume_expr()?;
+        let expression = self.consume_expression()?;
         if self.next_symbol_semicolon().is_none() {
             return Err(self.error_unexpected_token(vec![TokenKind::SymbolSemicolon]));
         }
 
-        Ok(expr)
+        Ok(expression)
     }
 
-    fn consume_expr(&mut self) -> Result<Node> {
+    fn consume_expression(&mut self) -> Result<Node> {
         self.consume_assign()
     }
 
@@ -198,7 +198,7 @@ impl<'a> Parser<'a> {
                 offset,
             })
         } else if self.next_symbol_round_bracket_left().is_some() {
-            let node = self.consume_expr()?;
+            let node = self.consume_expression()?;
             self.next_symbol_round_bracket_right().ok_or_else(|| {
                 self.error_unexpected_token(vec![TokenKind::SymbolRoundBracketRight])
             })?;
