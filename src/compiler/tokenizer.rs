@@ -1,3 +1,5 @@
+use regex::bytes::Regex;
+
 use crate::compiler::token::{Token, TokenKind};
 
 mod re {
@@ -5,6 +7,8 @@ mod re {
     use regex::bytes::Regex;
 
     pub const INTEGER: Lazy<Regex> = Lazy::new(|| Regex::new(r"-?(0|[1-9]\d*)").unwrap());
+    pub const IDENTIFIER: Lazy<Regex> =
+        Lazy::new(|| Regex::new(r"[_a-zA-Z][_a-zA-Z0-9]*").unwrap());
 }
 
 #[derive(Debug)]
@@ -31,6 +35,15 @@ impl<'a> Tokenizer<'a> {
         }
     }
 
+    fn consume_regex(&mut self, regex: &Regex) -> Option<String> {
+        let m = regex
+            .captures_at(self.text, self.index)?
+            .get(0)
+            .filter(|x| x.start() == self.index)?;
+        self.index += m.len();
+        Some(String::from_utf8(m.as_bytes().to_vec()).unwrap())
+    }
+
     pub fn consume_char(&mut self) -> Option<Token> {
         let token = match self.text.get(self.index) {
             None => Some(Token::new(TokenKind::EOF, self.index)),
@@ -45,7 +58,6 @@ impl<'a> Tokenizer<'a> {
                 b'>' => Some(Token::new(TokenKind::SymbolAngleBracketRight, self.index)),
                 b'=' => Some(Token::new(TokenKind::SymbolEqual, self.index)),
                 b';' => Some(Token::new(TokenKind::SymbolSemicolon, self.index)),
-                b'a'..=b'z' => Some(Token::new(TokenKind::Identifier(*v), self.index)),
                 _ => None,
             },
         };
@@ -81,23 +93,15 @@ impl<'a> Tokenizer<'a> {
     }
 
     pub fn consume_integer(&mut self) -> Option<Token> {
-        let m = re::INTEGER
-            .captures_at(self.text, self.index)?
-            .get(0)
-            .filter(|x| x.start() == self.index);
-        let m = match m {
-            Some(m) => m,
-            None => return None,
-        };
-        let value: i32 = String::from_utf8(m.as_bytes().to_vec())
-            .unwrap()
-            .parse()
-            .unwrap();
-        let token = Token::new(TokenKind::Integer(value), self.index);
+        let index = self.index;
+        let value: i32 = self.consume_regex(&*re::INTEGER)?.parse().unwrap();
+        Some(Token::new(TokenKind::Integer(value), index))
+    }
 
-        self.index += m.len();
-
-        Some(token)
+    pub fn consume_identifier(&mut self) -> Option<Token> {
+        let index = self.index;
+        let value = self.consume_regex(&*re::IDENTIFIER)?;
+        Some(Token::new(TokenKind::Identifier(value), index))
     }
 
     pub fn consume(&mut self) -> Option<Token> {
@@ -106,6 +110,7 @@ impl<'a> Tokenizer<'a> {
         None.or_else(|| self.consume_2_chars())
             .or_else(|| self.consume_char())
             .or_else(|| self.consume_integer())
+            .or_else(|| self.consume_identifier())
     }
 }
 

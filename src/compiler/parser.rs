@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::iter::Peekable;
 
 use crate::compiler::ast::Node;
@@ -8,6 +9,7 @@ use crate::compiler::tokenizer::{Tokenizer, TokenizerIterator};
 pub struct Parser<'a> {
     text: &'a str,
     tokens: Peekable<TokenizerIterator<'a>>,
+    locals: HashMap<String, usize>,
 }
 
 impl<'a> Parser<'a> {
@@ -16,6 +18,7 @@ impl<'a> Parser<'a> {
         Self {
             text,
             tokens: tokenizer.into_iter().peekable(),
+            locals: HashMap::new(),
         }
     }
 
@@ -40,6 +43,11 @@ impl<'a> Parser<'a> {
                 .unwrap_or_else(|| self.text.len()),
             expected,
         )
+    }
+
+    fn get_or_insert_local_offset(&mut self, identifier: String) -> usize {
+        let len = self.locals.len();
+        *self.locals.entry(identifier).or_insert((len + 1) * 8)
     }
 
     fn consume_statement(&mut self) -> Result<Node> {
@@ -184,9 +192,10 @@ impl<'a> Parser<'a> {
         if let Some(value) = self.next_numeric_value() {
             Ok(Node::Integer { value })
         } else if let Some(value) = self.next_identifier() {
+            let offset = self.get_or_insert_local_offset(value.to_owned());
             Ok(Node::LocalVariable {
                 identifier: value,
-                offset: (value - b'a') as usize,
+                offset,
             })
         } else if self.next_symbol_round_bracket_left().is_some() {
             let node = self.consume_expr()?;
@@ -213,12 +222,14 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn next_identifier(&mut self) -> Option<u8> {
+    fn next_identifier(&mut self) -> Option<String> {
         let token = self.tokens.peek()?;
 
-        if let TokenKind::Identifier(v) = token.kind {
+        if let TokenKind::Identifier(ref v) = token.kind {
+            let identifier = v.to_owned();
             self.tokens.next();
-            Some(v)
+
+            Some(identifier)
         } else {
             None
         }
@@ -501,16 +512,19 @@ mod tests {
 
     #[test]
     fn assignment() {
-        let mut parser = Parser::new("  c = 1 + 2 ;  ");
+        let mut parser = Parser::new("  foo = bar + 2 ;  ");
         assert_eq!(
             parser.consume_statement().unwrap(),
             Node::OperatorAssign {
                 lhs: Box::new(Node::LocalVariable {
-                    identifier: b'c',
-                    offset: 2
+                    identifier: String::from("foo"),
+                    offset: 8
                 }),
                 rhs: Box::new(Node::OperatorAdd {
-                    lhs: Box::new(Node::Integer { value: 1 }),
+                    lhs: Box::new(Node::LocalVariable {
+                        identifier: String::from("bar"),
+                        offset: 16
+                    }),
                     rhs: Box::new(Node::Integer { value: 2 }),
                 }),
             }
@@ -529,8 +543,8 @@ mod tests {
                         rhs: Box::new(Node::Integer { value: 2 })
                     },
                     Node::LocalVariable {
-                        identifier: b'a',
-                        offset: 0
+                        identifier: String::from("a"),
+                        offset: 8
                     }
                 ]
             }

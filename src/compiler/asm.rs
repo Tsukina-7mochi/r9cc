@@ -22,7 +22,7 @@ pub mod x86_64 {
                     "{}\n\
                      pop rax\n\
                      mov rax, [rax]\n\
-                     push rax\n",
+                     push rax",
                     self.unref_to_rax(),
                 ),
                 Node::OperatorAdd { lhs, rhs } => format!(

@@ -2,7 +2,7 @@
 pub enum Node {
     Block { statements: Vec<Node> },
     Integer { value: i32 },
-    LocalVariable { identifier: u8, offset: usize },
+    LocalVariable { identifier: String, offset: usize },
     OperatorAdd { lhs: Box<Node>, rhs: Box<Node> },
     OperatorSub { lhs: Box<Node>, rhs: Box<Node> },
     OperatorMul { lhs: Box<Node>, rhs: Box<Node> },
