@@ -98,10 +98,14 @@ impl<'a> Tokenizer<'a> {
         Some(Token::new(TokenKind::Integer(value), index))
     }
 
-    pub fn consume_identifier(&mut self) -> Option<Token> {
+    pub fn consume_identifier_and_keywords(&mut self) -> Option<Token> {
         let index = self.index;
         let value = self.consume_regex(&*re::IDENTIFIER)?;
-        Some(Token::new(TokenKind::Identifier(value), index))
+
+        match value.as_str() {
+            "return" => Some(Token::new(TokenKind::KeywordReturn, index)),
+            _ => Some(Token::new(TokenKind::Identifier(value), index)),
+        }
     }
 
     pub fn consume(&mut self) -> Option<Token> {
@@ -110,7 +114,7 @@ impl<'a> Tokenizer<'a> {
         None.or_else(|| self.consume_2_chars())
             .or_else(|| self.consume_char())
             .or_else(|| self.consume_integer())
-            .or_else(|| self.consume_identifier())
+            .or_else(|| self.consume_identifier_and_keywords())
     }
 }
 

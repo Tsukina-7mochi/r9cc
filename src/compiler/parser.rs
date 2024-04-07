@@ -51,12 +51,18 @@ impl<'a> Parser<'a> {
     }
 
     fn consume_statement(&mut self) -> Result<Node> {
+        let ret = self.next_keyword_return();
         let expression = self.consume_expression()?;
         if self.next_symbol_semicolon().is_none() {
             return Err(self.error_unexpected_token(vec![TokenKind::SymbolSemicolon]));
         }
 
-        Ok(expression)
+        match ret {
+            Some(_) => Ok(Node::Return {
+                value: expression.into(),
+            }),
+            None => Ok(expression),
+        }
     }
 
     fn consume_expression(&mut self) -> Result<Node> {
@@ -233,6 +239,12 @@ impl<'a> Parser<'a> {
         } else {
             None
         }
+    }
+
+    fn next_keyword_return(&mut self) -> Option<()> {
+        self.tokens
+            .next_if(|token| token.kind == TokenKind::KeywordReturn)
+            .map(|_| ())
     }
 
     fn next_symbol_plus(&mut self) -> Option<()> {
@@ -547,6 +559,20 @@ mod tests {
                         offset: 8
                     }
                 ]
+            }
+        )
+    }
+
+    #[test]
+    fn return_statement() {
+        let mut parser = Parser::new("  return 1 + 2;  ");
+        assert_eq!(
+            parser.consume_statement().unwrap(),
+            Node::Return {
+                value: Box::new(Node::OperatorAdd {
+                    lhs: Box::new(Node::Integer { value: 1 }),
+                    rhs: Box::new(Node::Integer { value: 2 })
+                }),
             }
         )
     }

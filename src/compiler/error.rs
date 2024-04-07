@@ -10,6 +10,7 @@ impl TokenKind {
         match self {
             Self::Integer(_) => "integer",
             Self::Identifier(_) => "identifier",
+            Self::KeywordReturn => "return",
             Self::SymbolPlus => "'+'",
             Self::SymbolMinus => "'-'",
             Self::SymbolStar => "'*'",

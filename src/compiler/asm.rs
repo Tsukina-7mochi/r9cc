@@ -25,6 +25,14 @@ pub mod x86_64 {
                      push rax",
                     self.unref_to_rax(),
                 ),
+                Node::Return { value } => format!(
+                    "{}\n\
+                     pop rax\n\
+                     mov rsp, rbp\n\
+                     pop rbp\n\
+                     ret",
+                    value.into_x86_64_string(),
+                ),
                 Node::OperatorAdd { lhs, rhs } => format!(
                     "{}\n\
                      {}\n\
