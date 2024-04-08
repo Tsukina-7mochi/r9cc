@@ -33,6 +33,46 @@ pub mod x86_64 {
                      ret",
                     value.into_x86_64_string(),
                 ),
+                Node::If {
+                    condition,
+                    statement,
+                    end_label,
+                } => format!(
+                    "{}\n\
+                     pop rax\n\
+                     cmp rax, 0\n\
+                     je {}\n\
+                     {}\n\
+                     {}:",
+                    condition.into_x86_64_string(),
+                    end_label,
+                    statement.into_x86_64_string(),
+                    end_label
+                ),
+                Node::IfElse {
+                    condition,
+                    statement,
+                    end_label,
+                    else_statement,
+                    else_label,
+                } => format!(
+                    "{}\n\
+                     pop rax\n\
+                     cmp rax, 0\n\
+                     je {}\n\
+                     {}\n\
+                     jmp {}\n\
+                     {}:\n\
+                     {}\n\
+                     {}:",
+                    condition.into_x86_64_string(),
+                    else_label,
+                    statement.into_x86_64_string(),
+                    end_label,
+                    else_label,
+                    else_statement.into_x86_64_string(),
+                    end_label
+                ),
                 Node::OperatorAdd { lhs, rhs } => format!(
                     "{}\n\
                      {}\n\
@@ -163,7 +203,9 @@ main:
     mov rsp, rbp
     pop rbp
     ret",
-            (node.into_x86_64_string()).replace("\n", "\n    ")
+            (node.into_x86_64_string())
+                .replace("\n", "\n    ")
+                .replace("\n    .", "\n.")
         )
     }
 }

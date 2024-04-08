@@ -3,6 +3,8 @@ pub enum TokenKind {
     Integer(i32),
     Identifier(String),
     KeywordReturn,
+    KeywordIf,
+    KeywordElse,
     SymbolPlus,
     SymbolMinus,
     SymbolStar,

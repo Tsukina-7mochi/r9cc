@@ -11,6 +11,8 @@ impl TokenKind {
             Self::Integer(_) => "integer",
             Self::Identifier(_) => "identifier",
             Self::KeywordReturn => "return",
+            Self::KeywordIf => "if",
+            Self::KeywordElse => "else",
             Self::SymbolPlus => "'+'",
             Self::SymbolMinus => "'-'",
             Self::SymbolStar => "'*'",

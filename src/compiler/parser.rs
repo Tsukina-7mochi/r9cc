@@ -10,6 +10,7 @@ pub struct Parser<'a> {
     text: &'a str,
     tokens: Peekable<TokenizerIterator<'a>>,
     locals: HashMap<String, usize>,
+    last_label_suffix: usize,
 }
 
 impl<'a> Parser<'a> {
@@ -19,6 +20,7 @@ impl<'a> Parser<'a> {
             text,
             tokens: tokenizer.into_iter().peekable(),
             locals: HashMap::new(),
+            last_label_suffix: 0,
         }
     }
 
@@ -50,18 +52,54 @@ impl<'a> Parser<'a> {
         *self.locals.entry(identifier).or_insert((len + 1) * 8)
     }
 
-    fn consume_statement(&mut self) -> Result<Node> {
-        let ret = self.next_keyword_return();
-        let expression = self.consume_expression()?;
-        if self.next_symbol_semicolon().is_none() {
-            return Err(self.error_unexpected_token(vec![TokenKind::SymbolSemicolon]));
-        }
+    fn get_next_label_suffix(&mut self) -> usize {
+        self.last_label_suffix += 1;
+        self.last_label_suffix
+    }
 
-        match ret {
-            Some(_) => Ok(Node::Return {
+    fn consume_statement(&mut self) -> Result<Node> {
+        if self.next_keyword_return().is_some() {
+            let expression = self.consume_expression()?;
+            if self.next_symbol_semicolon().is_none() {
+                return Err(self.error_unexpected_token(vec![TokenKind::SymbolSemicolon]));
+            }
+            Ok(Node::Return {
                 value: expression.into(),
-            }),
-            None => Ok(expression),
+            })
+        } else if self.next_keyword_if().is_some() {
+            if self.next_symbol_round_bracket_left().is_none() {
+                return Err(self.error_unexpected_token(vec![TokenKind::SymbolRoundBracketLeft]));
+            }
+            let condition = self.consume_expression()?;
+            if self.next_symbol_round_bracket_right().is_none() {
+                return Err(self.error_unexpected_token(vec![TokenKind::SymbolRoundBracketLeft]));
+            }
+            let statement = self.consume_statement()?;
+
+            if self.next_keyword_else().is_some() {
+                let else_statement = self.consume_statement()?;
+                let label_suffix = self.get_next_label_suffix();
+                Ok(Node::IfElse {
+                    condition: condition.into(),
+                    statement: statement.into(),
+                    end_label: format!(".Lend{}", label_suffix),
+                    else_statement: else_statement.into(),
+                    else_label: format!(".Lelse{}", label_suffix),
+                })
+            } else {
+                let label_suffix = self.get_next_label_suffix();
+                Ok(Node::If {
+                    condition: condition.into(),
+                    statement: statement.into(),
+                    end_label: format!(".Lend{}", label_suffix),
+                })
+            }
+        } else {
+            let expression = self.consume_expression()?;
+            if self.next_symbol_semicolon().is_none() {
+                return Err(self.error_unexpected_token(vec![TokenKind::SymbolSemicolon]));
+            }
+            Ok(expression)
         }
     }
 
@@ -244,6 +282,18 @@ impl<'a> Parser<'a> {
     fn next_keyword_return(&mut self) -> Option<()> {
         self.tokens
             .next_if(|token| token.kind == TokenKind::KeywordReturn)
+            .map(|_| ())
+    }
+
+    fn next_keyword_if(&mut self) -> Option<()> {
+        self.tokens
+            .next_if(|token| token.kind == TokenKind::KeywordIf)
+            .map(|_| ())
+    }
+
+    fn next_keyword_else(&mut self) -> Option<()> {
+        self.tokens
+            .next_if(|token| token.kind == TokenKind::KeywordElse)
             .map(|_| ())
     }
 
@@ -573,6 +623,40 @@ mod tests {
                     lhs: Box::new(Node::Integer { value: 1 }),
                     rhs: Box::new(Node::Integer { value: 2 })
                 }),
+            }
+        )
+    }
+
+    #[test]
+    fn if_statement() {
+        let mut parser = Parser::new("  if ( 1 < 2 ) 1;  ");
+        assert_eq!(
+            parser.consume_statement().unwrap(),
+            Node::If {
+                condition: Box::new(Node::OperatorLt {
+                    lhs: Box::new(Node::Integer { value: 1 }),
+                    rhs: Box::new(Node::Integer { value: 2 })
+                }),
+                statement: Box::new(Node::Integer { value: 1 }),
+                end_label: String::from(".Lend1"),
+            }
+        )
+    }
+
+    #[test]
+    fn if_else_statement() {
+        let mut parser = Parser::new("  if ( 1 < 2 ) 1; else 2;  ");
+        assert_eq!(
+            parser.consume_statement().unwrap(),
+            Node::IfElse {
+                condition: Box::new(Node::OperatorLt {
+                    lhs: Box::new(Node::Integer { value: 1 }),
+                    rhs: Box::new(Node::Integer { value: 2 })
+                }),
+                statement: Box::new(Node::Integer { value: 1 }),
+                end_label: String::from(".Lend1"),
+                else_statement: Box::new(Node::Integer { value: 2 }),
+                else_label: String::from(".Lelse1"),
             }
         )
     }

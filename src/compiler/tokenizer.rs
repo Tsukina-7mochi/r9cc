@@ -104,6 +104,8 @@ impl<'a> Tokenizer<'a> {
 
         match value.as_str() {
             "return" => Some(Token::new(TokenKind::KeywordReturn, index)),
+            "if" => Some(Token::new(TokenKind::KeywordIf, index)),
+            "else" => Some(Token::new(TokenKind::KeywordElse, index)),
             _ => Some(Token::new(TokenKind::Identifier(value), index)),
         }
     }

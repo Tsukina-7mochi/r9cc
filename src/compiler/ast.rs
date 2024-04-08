@@ -1,18 +1,66 @@
 #[derive(Debug, PartialEq)]
 pub enum Node {
-    Block { statements: Vec<Node> },
-    Integer { value: i32 },
-    LocalVariable { identifier: String, offset: usize },
-    Return { value: Box<Node> },
-    OperatorAdd { lhs: Box<Node>, rhs: Box<Node> },
-    OperatorSub { lhs: Box<Node>, rhs: Box<Node> },
-    OperatorMul { lhs: Box<Node>, rhs: Box<Node> },
-    OperatorDiv { lhs: Box<Node>, rhs: Box<Node> },
-    OperatorLt { lhs: Box<Node>, rhs: Box<Node> },
-    OperatorLtEq { lhs: Box<Node>, rhs: Box<Node> },
-    OperatorEq { lhs: Box<Node>, rhs: Box<Node> },
-    OperatorNe { lhs: Box<Node>, rhs: Box<Node> },
-    OperatorAssign { lhs: Box<Node>, rhs: Box<Node> },
+    Block {
+        statements: Vec<Node>,
+    },
+    Integer {
+        value: i32,
+    },
+    LocalVariable {
+        identifier: String,
+        offset: usize,
+    },
+    Return {
+        value: Box<Node>,
+    },
+    If {
+        condition: Box<Node>,
+        statement: Box<Node>,
+        end_label: String,
+    },
+    IfElse {
+        condition: Box<Node>,
+        statement: Box<Node>,
+        end_label: String,
+        else_statement: Box<Node>,
+        else_label: String,
+    },
+    OperatorAdd {
+        lhs: Box<Node>,
+        rhs: Box<Node>,
+    },
+    OperatorSub {
+        lhs: Box<Node>,
+        rhs: Box<Node>,
+    },
+    OperatorMul {
+        lhs: Box<Node>,
+        rhs: Box<Node>,
+    },
+    OperatorDiv {
+        lhs: Box<Node>,
+        rhs: Box<Node>,
+    },
+    OperatorLt {
+        lhs: Box<Node>,
+        rhs: Box<Node>,
+    },
+    OperatorLtEq {
+        lhs: Box<Node>,
+        rhs: Box<Node>,
+    },
+    OperatorEq {
+        lhs: Box<Node>,
+        rhs: Box<Node>,
+    },
+    OperatorNe {
+        lhs: Box<Node>,
+        rhs: Box<Node>,
+    },
+    OperatorAssign {
+        lhs: Box<Node>,
+        rhs: Box<Node>,
+    },
 }
 
 impl Node {
