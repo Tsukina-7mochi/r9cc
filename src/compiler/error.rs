@@ -13,6 +13,7 @@ impl TokenKind {
             Self::KeywordReturn => "return",
             Self::KeywordIf => "if",
             Self::KeywordElse => "else",
+            Self::KeywordWhile => "while",
             Self::SymbolPlus => "'+'",
             Self::SymbolMinus => "'-'",
             Self::SymbolStar => "'*'",

@@ -5,6 +5,7 @@ pub enum TokenKind {
     KeywordReturn,
     KeywordIf,
     KeywordElse,
+    KeywordWhile,
     SymbolPlus,
     SymbolMinus,
     SymbolStar,

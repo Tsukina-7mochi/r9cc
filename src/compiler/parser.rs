@@ -94,6 +94,23 @@ impl<'a> Parser<'a> {
                     end_label: format!(".Lend{}", label_suffix),
                 })
             }
+        } else if self.next_keyword_while().is_some() {
+            if self.next_symbol_round_bracket_left().is_none() {
+                return Err(self.error_unexpected_token(vec![TokenKind::SymbolRoundBracketLeft]));
+            }
+            let condition = self.consume_expression()?;
+            if self.next_symbol_round_bracket_right().is_none() {
+                return Err(self.error_unexpected_token(vec![TokenKind::SymbolRoundBracketLeft]));
+            }
+            let statement = self.consume_statement()?;
+            let label_suffix = self.get_next_label_suffix();
+
+            Ok(Node::While {
+                condition: condition.into(),
+                statement: statement.into(),
+                begin_label: format!(".Lbegin{}", label_suffix),
+                end_label: format!(".Lend{}", label_suffix),
+            })
         } else {
             let expression = self.consume_expression()?;
             if self.next_symbol_semicolon().is_none() {
@@ -294,6 +311,12 @@ impl<'a> Parser<'a> {
     fn next_keyword_else(&mut self) -> Option<()> {
         self.tokens
             .next_if(|token| token.kind == TokenKind::KeywordElse)
+            .map(|_| ())
+    }
+
+    fn next_keyword_while(&mut self) -> Option<()> {
+        self.tokens
+            .next_if(|token| token.kind == TokenKind::KeywordWhile)
             .map(|_| ())
     }
 
@@ -657,6 +680,23 @@ mod tests {
                 end_label: String::from(".Lend1"),
                 else_statement: Box::new(Node::Integer { value: 2 }),
                 else_label: String::from(".Lelse1"),
+            }
+        )
+    }
+
+    #[test]
+    fn while_statement() {
+        let mut parser = Parser::new("  while ( 1 < 2 ) 1;  ");
+        assert_eq!(
+            parser.consume_statement().unwrap(),
+            Node::While {
+                condition: Box::new(Node::OperatorLt {
+                    lhs: Box::new(Node::Integer { value: 1 }),
+                    rhs: Box::new(Node::Integer { value: 2 })
+                }),
+                statement: Box::new(Node::Integer { value: 1 }),
+                begin_label: String::from(".Lbegin1"),
+                end_label: String::from(".Lend1"),
             }
         )
     }

@@ -73,6 +73,27 @@ pub mod x86_64 {
                     else_statement.into_x86_64_string(),
                     end_label
                 ),
+                Node::While {
+                    condition,
+                    statement,
+                    begin_label,
+                    end_label,
+                } => format!(
+                    "{}:\n\
+                     {}\n\
+                     pop rax\n\
+                     cmp rax, 0\n\
+                     je {} \n\
+                     {}\n\
+                     jmp {}\n\
+                     {}:",
+                    begin_label,
+                    condition.into_x86_64_string(),
+                    end_label,
+                    statement.into_x86_64_string(),
+                    begin_label,
+                    end_label
+                ),
                 Node::OperatorAdd { lhs, rhs } => format!(
                     "{}\n\
                      {}\n\
@@ -192,6 +213,10 @@ pub mod x86_64 {
     }
 
     pub fn into_asm_string(node: &Node) -> String {
+        let mut asm = node.into_x86_64_string();
+        asm.insert(0, '\n');
+        asm = asm.replace("\n", "\n    ").replace("\n    .", "\n.");
+
         format!(
             ".intel_syntax noprefix
 .global main
@@ -199,13 +224,11 @@ main:
     push rbp
     mov rbp, rsp
     sub rsp, 208
-    {}
+{}
     mov rsp, rbp
     pop rbp
     ret",
-            (node.into_x86_64_string())
-                .replace("\n", "\n    ")
-                .replace("\n    .", "\n.")
+            &asm[1..]
         )
     }
 }

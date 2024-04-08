@@ -25,6 +25,12 @@ pub enum Node {
         else_statement: Box<Node>,
         else_label: String,
     },
+    While {
+        condition: Box<Node>,
+        statement: Box<Node>,
+        begin_label: String,
+        end_label: String,
+    },
     OperatorAdd {
         lhs: Box<Node>,
         rhs: Box<Node>,
