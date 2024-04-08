@@ -6,10 +6,33 @@ use crate::compiler::error::{CompileError, Result};
 use crate::compiler::token::TokenKind;
 use crate::compiler::tokenizer::{Tokenizer, TokenizerIterator};
 
+struct VariableScope {
+    variable_offsets: HashMap<String, usize>,
+    // should be equals to variables.len()
+    // cached due to HashMap.len() seems to be O(n) operation
+    variable_count: usize,
+}
+
+impl VariableScope {
+    pub fn new() -> Self {
+        Self {
+            variable_offsets: HashMap::new(),
+            variable_count: 0,
+        }
+    }
+
+    pub fn get_or_insert_offset_by_name(&mut self, identifier: String) -> usize {
+        *self.variable_offsets.entry(identifier).or_insert_with(|| {
+            self.variable_count += 1;
+            self.variable_count * 8
+        })
+    }
+}
+
 pub struct Parser<'a> {
     text: &'a str,
     tokens: Peekable<TokenizerIterator<'a>>,
-    locals: HashMap<String, usize>,
+    variable_scopes: Vec<VariableScope>,
     last_label_suffix: usize,
 }
 
@@ -19,7 +42,7 @@ impl<'a> Parser<'a> {
         Self {
             text,
             tokens: tokenizer.into_iter().peekable(),
-            locals: HashMap::new(),
+            variable_scopes: vec![VariableScope::new()],
             last_label_suffix: 0,
         }
     }
@@ -47,9 +70,11 @@ impl<'a> Parser<'a> {
         )
     }
 
-    fn get_or_insert_local_offset(&mut self, identifier: String) -> usize {
-        let len = self.locals.len();
-        *self.locals.entry(identifier).or_insert((len + 1) * 8)
+    fn get_or_insert_offset_by_name(&mut self, identifier: String) -> usize {
+        self.variable_scopes
+            .last_mut()
+            .unwrap()
+            .get_or_insert_offset_by_name(identifier)
     }
 
     fn get_next_label_suffix(&mut self) -> usize {
@@ -317,7 +342,7 @@ impl<'a> Parser<'a> {
                     arguments,
                 })
             } else {
-                let offset = self.get_or_insert_local_offset(value.to_owned());
+                let offset = self.get_or_insert_offset_by_name(value.to_owned());
                 Ok(Node::LocalVariable {
                     identifier: value,
                     offset,
