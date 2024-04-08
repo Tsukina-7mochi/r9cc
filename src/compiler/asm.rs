@@ -94,6 +94,36 @@ pub mod x86_64 {
                     begin_label,
                     end_label
                 ),
+                Node::For {
+                    initializer,
+                    condition,
+                    updater,
+                    statement,
+                    begin_label,
+                    end_label,
+                } => {
+                    let mut result = String::new();
+                    if let Some(initialize_statement) = initializer {
+                        result += &(initialize_statement.into_x86_64_string() + "\n");
+                        result += "pop rax\n";
+                    }
+                    result += &format!("{}:\n", begin_label);
+                    if let Some(condition) = condition {
+                        result += &(condition.into_x86_64_string() + "\n");
+                        result += "pop rax\n";
+                        result += "cmp rax, 0\n";
+                        result += &format!("je {}\n", end_label);
+                    }
+                    result += &(statement.into_x86_64_string() + "\n");
+                    if let Some(updater) = updater {
+                        result += &(updater.into_x86_64_string() + "\n");
+                        result += "pop rax\n";
+                    }
+                    result += &format!("jmp {}\n", begin_label);
+                    result += &format!("{}:", end_label);
+
+                    result
+                }
                 Node::OperatorAdd { lhs, rhs } => format!(
                     "{}\n\
                      {}\n\

@@ -14,6 +14,7 @@ impl TokenKind {
             Self::KeywordIf => "if",
             Self::KeywordElse => "else",
             Self::KeywordWhile => "while",
+            Self::KeywordFor => "for",
             Self::SymbolPlus => "'+'",
             Self::SymbolMinus => "'-'",
             Self::SymbolStar => "'*'",

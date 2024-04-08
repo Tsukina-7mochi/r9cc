@@ -111,6 +111,33 @@ impl<'a> Parser<'a> {
                 begin_label: format!(".Lbegin{}", label_suffix),
                 end_label: format!(".Lend{}", label_suffix),
             })
+        } else if self.next_keyword_for().is_some() {
+            if self.next_symbol_round_bracket_left().is_none() {
+                return Err(self.error_unexpected_token(vec![TokenKind::SymbolRoundBracketLeft]));
+            }
+            let initializer = self.consume_expression();
+            if self.next_symbol_semicolon().is_none() {
+                return Err(self.error_unexpected_token(vec![TokenKind::SymbolSemicolon]));
+            }
+            let condition = self.consume_expression();
+            if self.next_symbol_semicolon().is_none() {
+                return Err(self.error_unexpected_token(vec![TokenKind::SymbolSemicolon]));
+            }
+            let updater = self.consume_expression();
+            if self.next_symbol_round_bracket_right().is_none() {
+                return Err(self.error_unexpected_token(vec![TokenKind::SymbolRoundBracketLeft]));
+            }
+            let statement = self.consume_statement()?;
+            let label_suffix = self.get_next_label_suffix();
+
+            Ok(Node::For {
+                initializer: initializer.ok().map(|v| v.into()),
+                condition: condition.ok().map(|v| v.into()),
+                updater: updater.ok().map(|v| v.into()),
+                statement: statement.into(),
+                begin_label: format!(".Lbegin{}", label_suffix),
+                end_label: format!(".Lend{}", label_suffix),
+            })
         } else {
             let expression = self.consume_expression()?;
             if self.next_symbol_semicolon().is_none() {
@@ -317,6 +344,12 @@ impl<'a> Parser<'a> {
     fn next_keyword_while(&mut self) -> Option<()> {
         self.tokens
             .next_if(|token| token.kind == TokenKind::KeywordWhile)
+            .map(|_| ())
+    }
+
+    fn next_keyword_for(&mut self) -> Option<()> {
+        self.tokens
+            .next_if(|token| token.kind == TokenKind::KeywordFor)
             .map(|_| ())
     }
 
@@ -697,6 +730,65 @@ mod tests {
                 statement: Box::new(Node::Integer { value: 1 }),
                 begin_label: String::from(".Lbegin1"),
                 end_label: String::from(".Lend1"),
+            }
+        )
+    }
+
+    #[test]
+    fn for_statement() {
+        let mut parser = Parser::new("  for ( i = 0; i < 10; i = i + 1 ) i;  ");
+        assert_eq!(
+            parser.consume_statement().unwrap(),
+            Node::For {
+                initializer: Some(Box::new(Node::OperatorAssign {
+                    lhs: Box::new(Node::LocalVariable {
+                        identifier: String::from("i"),
+                        offset: 8
+                    }),
+                    rhs: Box::new(Node::Integer { value: 0 }),
+                })),
+                condition: Some(Box::new(Node::OperatorLt {
+                    lhs: Box::new(Node::LocalVariable {
+                        identifier: String::from("i"),
+                        offset: 8
+                    }),
+                    rhs: Box::new(Node::Integer { value: 10 }),
+                })),
+                updater: Some(Box::new(Node::OperatorAssign {
+                    lhs: Box::new(Node::LocalVariable {
+                        identifier: String::from("i"),
+                        offset: 8
+                    }),
+                    rhs: Box::new(Node::OperatorAdd {
+                        lhs: Box::new(Node::LocalVariable {
+                            identifier: String::from("i"),
+                            offset: 8
+                        }),
+                        rhs: Box::new(Node::Integer { value: 1 })
+                    })
+                })),
+                statement: Box::new(Node::LocalVariable {
+                    identifier: String::from("i"),
+                    offset: 8
+                }),
+                begin_label: String::from(".Lbegin1"),
+                end_label: String::from(".Lend1")
+            }
+        )
+    }
+
+    #[test]
+    fn for_statement_abbr() {
+        let mut parser = Parser::new("  for(;;) 1;  ");
+        assert_eq!(
+            parser.consume_statement().unwrap(),
+            Node::For {
+                initializer: None,
+                condition: None,
+                updater: None,
+                statement: Box::new(Node::Integer { value: 1 }),
+                begin_label: String::from(".Lbegin1"),
+                end_label: String::from(".Lend1")
             }
         )
     }

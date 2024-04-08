@@ -31,6 +31,14 @@ pub enum Node {
         begin_label: String,
         end_label: String,
     },
+    For {
+        initializer: Option<Box<Node>>,
+        condition: Option<Box<Node>>,
+        updater: Option<Box<Node>>,
+        statement: Box<Node>,
+        begin_label: String,
+        end_label: String,
+    },
     OperatorAdd {
         lhs: Box<Node>,
         rhs: Box<Node>,

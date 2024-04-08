@@ -6,6 +6,7 @@ pub enum TokenKind {
     KeywordIf,
     KeywordElse,
     KeywordWhile,
+    KeywordFor,
     SymbolPlus,
     SymbolMinus,
     SymbolStar,

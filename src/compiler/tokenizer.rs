@@ -107,6 +107,7 @@ impl<'a> Tokenizer<'a> {
             "if" => Some(Token::new(TokenKind::KeywordIf, index)),
             "else" => Some(Token::new(TokenKind::KeywordElse, index)),
             "while" => Some(Token::new(TokenKind::KeywordWhile, index)),
+            "for" => Some(Token::new(TokenKind::KeywordFor, index)),
             _ => Some(Token::new(TokenKind::Identifier(value), index)),
         }
     }
