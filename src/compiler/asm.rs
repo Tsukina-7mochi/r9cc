@@ -124,6 +124,7 @@ pub mod x86_64 {
 
                     result
                 }
+                Node::FunctionCall { identifier } => format!("call {}", identifier),
                 Node::OperatorAdd { lhs, rhs } => format!(
                     "{}\n\
                      {}\n\

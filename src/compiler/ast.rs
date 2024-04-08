@@ -39,6 +39,9 @@ pub enum Node {
         begin_label: String,
         end_label: String,
     },
+    FunctionCall {
+        identifier: String,
+    },
     OperatorAdd {
         lhs: Box<Node>,
         rhs: Box<Node>,

@@ -294,11 +294,21 @@ impl<'a> Parser<'a> {
         if let Some(value) = self.next_numeric_value() {
             Ok(Node::Integer { value })
         } else if let Some(value) = self.next_identifier() {
-            let offset = self.get_or_insert_local_offset(value.to_owned());
-            Ok(Node::LocalVariable {
-                identifier: value,
-                offset,
-            })
+            if self.next_symbol_round_bracket_left().is_some() {
+                if self.next_symbol_round_bracket_right().is_none() {
+                    return Err(
+                        self.error_unexpected_token(vec![TokenKind::SymbolRoundBracketRight])
+                    );
+                }
+
+                Ok(Node::FunctionCall { identifier: value })
+            } else {
+                let offset = self.get_or_insert_local_offset(value.to_owned());
+                Ok(Node::LocalVariable {
+                    identifier: value,
+                    offset,
+                })
+            }
         } else if self.next_symbol_round_bracket_left().is_some() {
             let node = self.consume_expression()?;
             self.next_symbol_round_bracket_right().ok_or_else(|| {
