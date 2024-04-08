@@ -58,7 +58,21 @@ impl<'a> Parser<'a> {
     }
 
     fn consume_statement(&mut self) -> Result<Node> {
-        if self.next_keyword_return().is_some() {
+        if self.next_symbol_curly_bracket_left().is_some() {
+            let mut statements = Vec::<Node>::new();
+            loop {
+                if let Ok(statement) = self.consume_statement() {
+                    statements.push(statement);
+                } else {
+                    break;
+                }
+            }
+            if self.next_symbol_curly_bracket_right().is_none() {
+                return Err(self.error_unexpected_token(vec![TokenKind::SymbolCurlyBracketRight]));
+            }
+
+            Ok(Node::Block { statements })
+        } else if self.next_keyword_return().is_some() {
             let expression = self.consume_expression()?;
             if self.next_symbol_semicolon().is_none() {
                 return Err(self.error_unexpected_token(vec![TokenKind::SymbolSemicolon]));
@@ -410,6 +424,18 @@ impl<'a> Parser<'a> {
     fn next_symbol_angle_bracket_right_and_equal(&mut self) -> Option<()> {
         self.tokens
             .next_if(|token| token.kind == TokenKind::SymbolAngleBracketRightAndEqual)
+            .map(|_| ())
+    }
+
+    fn next_symbol_curly_bracket_left(&mut self) -> Option<()> {
+        self.tokens
+            .next_if(|token| token.kind == TokenKind::SymbolCurlyBracketLeft)
+            .map(|_| ())
+    }
+
+    fn next_symbol_curly_bracket_right(&mut self) -> Option<()> {
+        self.tokens
+            .next_if(|token| token.kind == TokenKind::SymbolCurlyBracketRight)
             .map(|_| ())
     }
 
@@ -789,6 +815,53 @@ mod tests {
                 statement: Box::new(Node::Integer { value: 1 }),
                 begin_label: String::from(".Lbegin1"),
                 end_label: String::from(".Lend1")
+            }
+        )
+    }
+
+    #[test]
+    fn block() {
+        let mut parser = Parser::new("  { 1; }  ");
+        assert_eq!(
+            parser.consume_statement().unwrap(),
+            Node::Block {
+                statements: vec![Node::Integer { value: 1 }],
+            }
+        )
+    }
+
+    #[test]
+    fn if_statement_with_block() {
+        let mut parser = Parser::new("  if(a < 0) { a = 0; a = 1; }  ");
+        assert_eq!(
+            parser.consume_statement().unwrap(),
+            Node::If {
+                condition: Box::new(Node::OperatorLt {
+                    lhs: Box::new(Node::LocalVariable {
+                        identifier: String::from("a"),
+                        offset: 8
+                    }),
+                    rhs: Box::new(Node::Integer { value: 0 })
+                }),
+                statement: Box::new(Node::Block {
+                    statements: vec![
+                        Node::OperatorAssign {
+                            lhs: Box::new(Node::LocalVariable {
+                                identifier: String::from("a"),
+                                offset: 8
+                            }),
+                            rhs: Box::new(Node::Integer { value: 0 })
+                        },
+                        Node::OperatorAssign {
+                            lhs: Box::new(Node::LocalVariable {
+                                identifier: String::from("a"),
+                                offset: 8
+                            }),
+                            rhs: Box::new(Node::Integer { value: 1 })
+                        }
+                    ]
+                }),
+                end_label: String::from(".Lend1"),
             }
         )
     }

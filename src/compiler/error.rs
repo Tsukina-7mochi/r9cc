@@ -25,6 +25,8 @@ impl TokenKind {
             Self::SymbolAngleBracketRight => "'>'",
             Self::SymbolAngleBracketLeftAndEqual => "'<='",
             Self::SymbolAngleBracketRightAndEqual => "'>='",
+            Self::SymbolCurlyBracketLeft => "'{'",
+            Self::SymbolCurlyBracketRight => "'}'",
             Self::SymbolDoubleEqual => "'=='",
             Self::SymbolExclamationAndEqual => "'!='",
             Self::SymbolEqual => "'='",

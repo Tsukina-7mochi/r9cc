@@ -17,6 +17,8 @@ pub enum TokenKind {
     SymbolAngleBracketRight,
     SymbolAngleBracketLeftAndEqual,
     SymbolAngleBracketRightAndEqual,
+    SymbolCurlyBracketLeft,
+    SymbolCurlyBracketRight,
     SymbolDoubleEqual,
     SymbolExclamationAndEqual,
     SymbolEqual,

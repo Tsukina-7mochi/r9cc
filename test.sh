@@ -53,5 +53,6 @@ assert 10 "i = 0; while(i < 10) i = i + 1; i;"
 assert 55 "sum = 0; i = 0; while(i <= 9) sum = sum + (i = i + 1); sum;"
 assert 10 "for(i = 0; i < 10; i = i + 1) i; i;"
 assert 55 "sum = 0; for(i = 1; i <= 10; i = i + 1) sum = sum + i; sum;"
+assert 55 "sum = 0; i = 1; while(i <= 10) { sum = sum + i; i = i + 1; } sum;"
 
 echo OK

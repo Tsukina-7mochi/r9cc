@@ -56,6 +56,8 @@ impl<'a> Tokenizer<'a> {
                 b')' => Some(Token::new(TokenKind::SymbolRoundBracketRight, self.index)),
                 b'<' => Some(Token::new(TokenKind::SymbolAngleBracketLeft, self.index)),
                 b'>' => Some(Token::new(TokenKind::SymbolAngleBracketRight, self.index)),
+                b'{' => Some(Token::new(TokenKind::SymbolCurlyBracketLeft, self.index)),
+                b'}' => Some(Token::new(TokenKind::SymbolCurlyBracketRight, self.index)),
                 b'=' => Some(Token::new(TokenKind::SymbolEqual, self.index)),
                 b';' => Some(Token::new(TokenKind::SymbolSemicolon, self.index)),
                 _ => None,
