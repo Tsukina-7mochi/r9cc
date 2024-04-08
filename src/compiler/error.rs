@@ -31,6 +31,7 @@ impl TokenKind {
             Self::SymbolExclamationAndEqual => "'!='",
             Self::SymbolEqual => "'='",
             Self::SymbolSemicolon => "';'",
+            Self::SymbolComma => "','",
             Self::EOF => "EOF",
         }
     }

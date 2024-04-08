@@ -295,13 +295,27 @@ impl<'a> Parser<'a> {
             Ok(Node::Integer { value })
         } else if let Some(value) = self.next_identifier() {
             if self.next_symbol_round_bracket_left().is_some() {
+                let mut arguments = Vec::<Node>::new();
+                if let Ok(argument) = self.consume_expression() {
+                    arguments.push(argument);
+                    loop {
+                        if self.next_symbol_comma().is_none() {
+                            break;
+                        }
+                        arguments.push(self.consume_expression()?);
+                    }
+                }
+
                 if self.next_symbol_round_bracket_right().is_none() {
                     return Err(
                         self.error_unexpected_token(vec![TokenKind::SymbolRoundBracketRight])
                     );
                 }
 
-                Ok(Node::FunctionCall { identifier: value })
+                Ok(Node::FunctionCall {
+                    identifier: value,
+                    arguments,
+                })
             } else {
                 let offset = self.get_or_insert_local_offset(value.to_owned());
                 Ok(Node::LocalVariable {
@@ -470,6 +484,12 @@ impl<'a> Parser<'a> {
     fn next_symbol_semicolon(&mut self) -> Option<()> {
         self.tokens
             .next_if(|token| token.kind == TokenKind::SymbolSemicolon)
+            .map(|_| ())
+    }
+
+    fn next_symbol_comma(&mut self) -> Option<()> {
+        self.tokens
+            .next_if(|token| token.kind == TokenKind::SymbolComma)
             .map(|_| ())
     }
 
@@ -872,6 +892,30 @@ mod tests {
                     ]
                 }),
                 end_label: String::from(".Lend1"),
+            }
+        )
+    }
+
+    #[test]
+    fn function_call() {
+        let mut parser = Parser::new("  func();  ");
+        assert_eq!(
+            parser.consume_statement().unwrap(),
+            Node::FunctionCall {
+                identifier: String::from("func"),
+                arguments: vec![]
+            }
+        )
+    }
+
+    #[test]
+    fn function_call_with_arguments() {
+        let mut parser = Parser::new("  func(1, 2);  ");
+        assert_eq!(
+            parser.consume_statement().unwrap(),
+            Node::FunctionCall {
+                identifier: String::from("func"),
+                arguments: vec![Node::Integer { value: 1 }, Node::Integer { value: 2 },]
             }
         )
     }

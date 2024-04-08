@@ -23,6 +23,7 @@ pub enum TokenKind {
     SymbolExclamationAndEqual,
     SymbolEqual,
     SymbolSemicolon,
+    SymbolComma,
     EOF,
 }
 

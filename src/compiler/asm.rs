@@ -1,6 +1,8 @@
 pub mod x86_64 {
     use crate::compiler::ast::Node;
 
+    const ARGUMENT_REGISTERS: &[&'static str] = &["rdi", "rsi", "rdx", "rcx", "r8", "r9"];
+
     trait IntoX86_64Instructions {
         fn into_x86_64_string(&self) -> String;
         fn unref_to_rax(&self) -> String;
@@ -124,7 +126,22 @@ pub mod x86_64 {
 
                     result
                 }
-                Node::FunctionCall { identifier } => format!("call {}", identifier),
+                Node::FunctionCall {
+                    identifier,
+                    arguments,
+                } => {
+                    let mut result = String::new();
+                    if arguments.len() > 6 {
+                        panic!("Cannot handle more than 6 arguments.");
+                    }
+                    for (i, argument) in arguments.iter().enumerate() {
+                        result += &(argument.into_x86_64_string() + "\n");
+                        result += &format!("pop {}\n", ARGUMENT_REGISTERS[i]);
+                    }
+                    result += &format!("call {}", identifier);
+
+                    result
+                }
                 Node::OperatorAdd { lhs, rhs } => format!(
                     "{}\n\
                      {}\n\

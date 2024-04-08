@@ -1,5 +1,7 @@
 #!/bin/bash
 asset_print_foo="tmp_print_foo.o"
+asset_print_sum="tmp_print_sum.o"
+assets="$asset_print_foo $asset_print_sum"
 
 assert() {
   expected="$1"
@@ -26,7 +28,7 @@ assert_stdout() {
   input="$2"
 
   echo "$input" | ./target/debug/r9cc > tmp.s
-  cc -o tmp tmp.s $asset_print_foo
+  cc -o tmp tmp.s $assets
   actual="$(./tmp)"
 
   if [ "$actual" = "$expected" ]; then
@@ -42,6 +44,7 @@ assert_stdout() {
 
 cargo build
 cc -o "$asset_print_foo" -c "test_assets/print_foo.c"
+cc -o "$asset_print_sum" -c "test_assets/print_sum.c"
 
 assert 10 " 10 ; "
 assert 41 " 12 + 34 -  5 ; "
@@ -77,7 +80,8 @@ assert 10 "for(i = 0; i < 10; i = i + 1) i; i;"
 assert 55 "sum = 0; for(i = 1; i <= 10; i = i + 1) sum = sum + i; sum;"
 assert 55 "sum = 0; i = 1; while(i <= 10) { sum = sum + i; i = i + 1; } sum;"
 assert_stdout "foo" "print_foo();"
+assert_stdout "3" "print_sum(1, 2);"
 
-rm "$asset_print_foo"
+rm -f $assets
 
 echo OK

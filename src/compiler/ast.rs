@@ -41,6 +41,7 @@ pub enum Node {
     },
     FunctionCall {
         identifier: String,
+        arguments: Vec<Node>,
     },
     OperatorAdd {
         lhs: Box<Node>,

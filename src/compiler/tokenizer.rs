@@ -60,6 +60,7 @@ impl<'a> Tokenizer<'a> {
                 b'}' => Some(Token::new(TokenKind::SymbolCurlyBracketRight, self.index)),
                 b'=' => Some(Token::new(TokenKind::SymbolEqual, self.index)),
                 b';' => Some(Token::new(TokenKind::SymbolSemicolon, self.index)),
+                b',' => Some(Token::new(TokenKind::SymbolComma, self.index)),
                 _ => None,
             },
         };
